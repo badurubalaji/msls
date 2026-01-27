@@ -1,0 +1,93 @@
+.checkbox {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  cursor: pointer;
+  user-select: none;
+
+  &--disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  &__input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  &__box {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.125rem;
+    height: 1.125rem;
+    flex-shrink: 0;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 0.25rem;
+    background-color: white;
+    transition: all 0.15s ease-in-out;
+
+    svg {
+      width: 0.75rem;
+      height: 0.75rem;
+      color: white;
+    }
+
+    // Hover state
+    .checkbox:hover:not(.checkbox--disabled) & {
+      border-color: #6366f1;
+    }
+
+    // Focus state
+    .checkbox__input:focus-visible + & {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    }
+
+    // Checked state
+    &--checked {
+      background-color: #4f46e5;
+      border-color: #4f46e5;
+
+      .checkbox:hover:not(.checkbox--disabled) & {
+        background-color: #4338ca;
+        border-color: #4338ca;
+      }
+    }
+
+    // Indeterminate state
+    &--indeterminate {
+      background-color: #4f46e5;
+      border-color: #4f46e5;
+    }
+
+    // Disabled state
+    .checkbox--disabled & {
+      background-color: #f1f5f9;
+      border-color: #e2e8f0;
+    }
+
+    .checkbox--disabled &--checked,
+    .checkbox--disabled &--indeterminate {
+      background-color: #94a3b8;
+      border-color: #94a3b8;
+    }
+  }
+
+  &__label {
+    font-size: 0.875rem;
+    color: #334155;
+    line-height: 1.25rem;
+
+    .checkbox--disabled & {
+      color: #64748b;
+    }
+  }
+}

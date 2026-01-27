@@ -1,0 +1,117 @@
+<!-- Login Page - Full-page centered login form -->
+<div class="login-page">
+  <!-- Login Card Container -->
+  <div class="login-card">
+    <!-- Logo/Branding Section -->
+    <div class="login-header">
+      <div class="login-logo">
+        <div class="login-logo__icon">
+          <i class="fa-solid fa-graduation-cap"></i>
+        </div>
+        <span class="login-logo__text">MySchoolSystem</span>
+      </div>
+      <h1 class="login-title">Welcome Back</h1>
+      <p class="login-subtitle">Sign in to your account to continue</p>
+    </div>
+
+    <!-- Error Message Display -->
+    @if (error()) {
+      <div class="login-error" role="alert" aria-live="polite">
+        <i class="fa-solid fa-circle-exclamation login-error__icon"></i>
+        <span class="login-error__text">{{ error() }}</span>
+      </div>
+    }
+
+    <!-- Login Form -->
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form" autocomplete="on">
+      <!-- Email Field -->
+      <div class="form-field">
+        <msls-input
+          formControlName="email"
+          type="email"
+          label="Email Address"
+          placeholder="Enter your email"
+          autocomplete="email"
+          prefixIcon="envelope"
+          [error]="emailError()"
+          [required]="true"
+          inputId="login-email"
+        />
+      </div>
+
+      <!-- Password Field with Toggle -->
+      <div class="form-field">
+        <div class="password-field">
+          <msls-input
+            formControlName="password"
+            [type]="showPassword() ? 'text' : 'password'"
+            label="Password"
+            placeholder="Enter your password"
+            autocomplete="current-password"
+            prefixIcon="lock-closed"
+            [error]="passwordError()"
+            [required]="true"
+            inputId="login-password"
+          />
+          <button
+            type="button"
+            class="password-toggle"
+            (click)="togglePasswordVisibility()"
+            [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
+            [attr.aria-pressed]="showPassword()"
+            [disabled]="isLoading()"
+          >
+            @if (showPassword()) {
+              <i class="fa-regular fa-eye-slash"></i>
+            } @else {
+              <i class="fa-regular fa-eye"></i>
+            }
+          </button>
+        </div>
+      </div>
+
+      <!-- Remember Me & Forgot Password Row -->
+      <div class="form-options">
+        <msls-checkbox
+          formControlName="rememberMe"
+          label="Remember me"
+        />
+
+        <a routerLink="/forgot-password" class="forgot-password-link" tabindex="0">
+          Forgot password?
+        </a>
+      </div>
+
+      <!-- Submit Button -->
+      <div class="form-actions">
+        <button
+          type="submit"
+          class="signin-btn"
+          [disabled]="isLoading()"
+          [class.signin-btn--loading]="isLoading()"
+        >
+          @if (isLoading()) {
+            <span class="signin-btn__spinner"></span>
+            <span>Signing in...</span>
+          } @else {
+            <i class="fa-solid fa-right-to-bracket"></i>
+            <span>Sign In</span>
+          }
+        </button>
+      </div>
+    </form>
+
+    <!-- Footer Links -->
+    <div class="login-footer">
+      <p class="login-footer__text">
+        Don't have an account?
+        <a routerLink="/register" class="login-footer__link">Contact your administrator</a>
+      </p>
+    </div>
+  </div>
+
+  <!-- Copyright Footer -->
+  <div class="login-copyright">
+    <p>&copy; {{ currentYear }} MySchoolSystem. All rights reserved.</p>
+  </div>
+</div>

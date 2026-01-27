@@ -1,0 +1,22 @@
+<!-- Dropdown Container -->
+<div
+  class="dropdown"
+  (mouseenter)="onMouseEnter()"
+  (mouseleave)="onMouseLeave()"
+>
+  <!-- Trigger Element -->
+  <div class="dropdown__trigger" (click)="onTriggerClick()">
+    <ng-content select="[dropdown-trigger]"></ng-content>
+  </div>
+
+  <!-- Dropdown Content -->
+  @if (isOpen()) {
+    <div
+      class="dropdown__content"
+      [ngClass]="positionClasses()"
+      role="menu"
+    >
+      <ng-content select="[dropdown-content]"></ng-content>
+    </div>
+  }
+</div>

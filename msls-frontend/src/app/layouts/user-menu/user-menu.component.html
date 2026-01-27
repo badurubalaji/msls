@@ -1,0 +1,67 @@
+<!-- User Menu Dropdown -->
+<msls-dropdown position="bottom-end" trigger="click">
+  <!-- Trigger: Avatar Button -->
+  <button
+    dropdown-trigger
+    type="button"
+    class="user-menu__trigger"
+    aria-label="User menu"
+  >
+    <msls-avatar
+      [name]="userFullName()"
+      size="sm"
+    />
+    <span class="user-menu__name">{{ displayName() }}</span>
+    <msls-icon name="chevron-down" size="xs" class="user-menu__chevron" />
+  </button>
+
+  <!-- Dropdown Content -->
+  <div dropdown-content class="user-menu__content">
+    <!-- User Info Header -->
+    <div class="user-menu__header">
+      <msls-avatar
+        [name]="userFullName()"
+        size="md"
+      />
+      <div class="user-menu__info">
+        <span class="user-menu__display-name">{{ displayName() }}</span>
+        <span class="user-menu__email">{{ userEmail() }}</span>
+      </div>
+    </div>
+
+    <hr class="user-menu__divider" />
+
+    <!-- Menu Items -->
+    <nav class="user-menu__nav" role="menu">
+      <a
+        class="user-menu__item"
+        routerLink="/profile"
+        role="menuitem"
+      >
+        <msls-icon name="user-circle" size="sm" />
+        <span>Profile</span>
+      </a>
+
+      <a
+        class="user-menu__item"
+        routerLink="/settings"
+        role="menuitem"
+      >
+        <msls-icon name="cog" size="sm" />
+        <span>Settings</span>
+      </a>
+
+      <hr class="user-menu__divider" />
+
+      <button
+        type="button"
+        class="user-menu__item user-menu__item--danger"
+        (click)="logout()"
+        role="menuitem"
+      >
+        <msls-icon name="arrow-right-on-rectangle" size="sm" />
+        <span>Logout</span>
+      </button>
+    </nav>
+  </div>
+</msls-dropdown>

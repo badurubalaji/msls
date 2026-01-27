@@ -1,0 +1,649 @@
+<!-- Attendance Management Page -->
+<div class="attendance-management-page">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-content">
+      <div class="header-left">
+        <div class="header-icon">
+          <i class="fa-solid fa-clipboard-list"></i>
+        </div>
+        <div class="header-text">
+          <h1>Attendance Management</h1>
+          <p>View and manage staff attendance records</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button type="button" class="mark-btn" (click)="openMarkAttendanceModal()">
+          <i class="fa-solid fa-plus"></i>
+          <span>Mark Attendance</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <!-- Error State -->
+    @if (error()) {
+      <div class="error-card">
+        <div class="error-card__icon">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <div class="error-card__content">
+          <h3>Unable to load data</h3>
+          <p>{{ error() }}</p>
+        </div>
+        <div class="error-card__action">
+          <button type="button" class="retry-btn" (click)="loadData()">
+            <i class="fa-solid fa-arrows-rotate"></i>
+            Retry
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button
+        type="button"
+        class="tab"
+        [class.tab--active]="activeTab() === 'attendance'"
+        (click)="setActiveTab('attendance')"
+      >
+        <i class="fa-solid fa-calendar-check"></i>
+        <span>Daily Attendance</span>
+      </button>
+      <button
+        type="button"
+        class="tab"
+        [class.tab--active]="activeTab() === 'regularization'"
+        (click)="setActiveTab('regularization')"
+      >
+        <i class="fa-solid fa-file-pen"></i>
+        <span>Regularization Requests</span>
+        @if (pendingRegularizations() > 0) {
+          <span class="tab__badge">{{ pendingRegularizations() }}</span>
+        }
+      </button>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="stats-bar">
+      <div class="stat-item stat-item--present">
+        <div class="stat-item__icon">
+          <i class="fa-solid fa-check"></i>
+        </div>
+        <div class="stat-item__info">
+          <span class="stat-item__value">{{ stats().present }}</span>
+          <span class="stat-item__label">Present</span>
+        </div>
+      </div>
+      <div class="stat-item stat-item--absent">
+        <div class="stat-item__icon">
+          <i class="fa-solid fa-xmark"></i>
+        </div>
+        <div class="stat-item__info">
+          <span class="stat-item__value">{{ stats().absent }}</span>
+          <span class="stat-item__label">Absent</span>
+        </div>
+      </div>
+      <div class="stat-item stat-item--late">
+        <div class="stat-item__icon">
+          <i class="fa-solid fa-clock"></i>
+        </div>
+        <div class="stat-item__info">
+          <span class="stat-item__value">{{ stats().late }}</span>
+          <span class="stat-item__label">Late</span>
+        </div>
+      </div>
+      <div class="stat-item stat-item--total">
+        <div class="stat-item__icon">
+          <i class="fa-solid fa-users"></i>
+        </div>
+        <div class="stat-item__info">
+          <span class="stat-item__value">{{ stats().total }}</span>
+          <span class="stat-item__label">Total Records</span>
+        </div>
+      </div>
+    </div>
+
+    @if (activeTab() === 'attendance') {
+      <!-- Attendance Tab Content -->
+      <div class="filters-card">
+        <div class="filters-row">
+          <div class="date-input">
+            <i class="fa-solid fa-calendar date-input__icon"></i>
+            <input
+              type="date"
+              [value]="attendanceFilter().dateFrom || todayDate"
+              (change)="onDateChange($event)"
+            />
+          </div>
+
+          <div class="select-wrapper">
+            <select (change)="onBranchChange($event)">
+              <option value="">All Branches</option>
+              @for (branch of branches(); track branch.id) {
+                <option [value]="branch.id">{{ branch.name }}</option>
+              }
+            </select>
+            <i class="fa-solid fa-chevron-down select-wrapper__icon"></i>
+          </div>
+
+          <div class="select-wrapper">
+            <select (change)="onDepartmentChange($event)">
+              <option value="">All Departments</option>
+              @for (dept of departments(); track dept.id) {
+                <option [value]="dept.id">{{ dept.name }}</option>
+              }
+            </select>
+            <i class="fa-solid fa-chevron-down select-wrapper__icon"></i>
+          </div>
+
+          <div class="select-wrapper">
+            <select (change)="onStatusChange($event)">
+              <option value="">All Status</option>
+              @for (status of statusOptions; track status.value) {
+                <option [value]="status.value">{{ status.label }}</option>
+              }
+            </select>
+            <i class="fa-solid fa-chevron-down select-wrapper__icon"></i>
+          </div>
+
+          <div class="filter-actions">
+            <button
+              type="button"
+              class="refresh-btn"
+              [class.spinning]="loading()"
+              (click)="loadAttendance()"
+            >
+              <i class="fa-solid fa-arrows-rotate"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section Title -->
+      <div class="section-title">
+        <i class="fa-solid fa-calendar-day"></i>
+        <span>Attendance Records - {{ formatDisplayDate(attendanceFilter().dateFrom || todayDate) }}</span>
+      </div>
+
+      <!-- Attendance Table (Desktop) -->
+      <div class="data-table-container">
+        <div class="data-table">
+          @if (loading() && attendanceList().length === 0) {
+            <div class="data-table__body">
+              @for (i of [1, 2, 3, 4, 5]; track i) {
+                <div class="skeleton-row">
+                  <div class="skeleton-row__avatar"></div>
+                  <div class="skeleton-row__text skeleton-row__text--medium"></div>
+                  <div class="skeleton-row__text skeleton-row__text--short"></div>
+                  <div class="skeleton-row__text skeleton-row__text--short"></div>
+                  <div class="skeleton-row__badge"></div>
+                </div>
+              }
+            </div>
+          } @else if (attendanceList().length > 0) {
+            <!-- Table Header -->
+            <div class="data-table__header">
+              <span>Staff</span>
+              <span>Status</span>
+              <span>Check In</span>
+              <span>Check Out</span>
+              <span>Late</span>
+            </div>
+
+            <!-- Table Body -->
+            <div class="data-table__body">
+              @for (record of attendanceList(); track record.id) {
+                <div class="data-table__row">
+                  <div class="data-table__staff">
+                    <div class="staff-avatar">
+                      {{ getInitials(record.staffName || 'Unknown') }}
+                    </div>
+                    <div class="staff-info">
+                      <strong>{{ record.staffName || 'Unknown Staff' }}</strong>
+                      <span>{{ record.employeeId || '-' }}</span>
+                    </div>
+                  </div>
+                  <div>
+                    <span class="status-pill" [class]="'status-pill--' + record.status">
+                      {{ getStatusLabel(record.status) }}
+                    </span>
+                  </div>
+                  <div class="data-table__time">
+                    {{ record.checkInTime || '--:--' }}
+                  </div>
+                  <div class="data-table__time">
+                    {{ record.checkOutTime || '--:--' }}
+                  </div>
+                  <div>
+                    @if (record.lateMinutes && record.lateMinutes > 0) {
+                      <span class="late-badge">{{ record.lateMinutes }} min</span>
+                    } @else {
+                      <span class="data-table__na">-</span>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Mobile Cards -->
+      <div class="data-cards">
+        @for (record of attendanceList(); track record.id) {
+          <div class="data-card">
+            <div class="data-card__header">
+              <div class="data-card__staff">
+                <div class="staff-avatar staff-avatar--sm">
+                  {{ getInitials(record.staffName || 'Unknown') }}
+                </div>
+                <span>{{ record.staffName || 'Unknown' }}</span>
+              </div>
+              <span class="status-pill" [class]="'status-pill--' + record.status">
+                {{ getStatusLabel(record.status) }}
+              </span>
+            </div>
+            <div class="data-card__body">
+              <div class="data-card__time-group">
+                <div class="time-info">
+                  <i class="fa-solid fa-right-to-bracket"></i>
+                  <span>{{ record.checkInTime || '--:--' }}</span>
+                </div>
+                <i class="fa-solid fa-arrow-right time-arrow"></i>
+                <div class="time-info">
+                  <i class="fa-solid fa-right-from-bracket"></i>
+                  <span>{{ record.checkOutTime || '--:--' }}</span>
+                </div>
+              </div>
+              @if (record.lateMinutes && record.lateMinutes > 0) {
+                <span class="late-badge">{{ record.lateMinutes }} min late</span>
+              }
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Empty State -->
+      @if (!loading() && attendanceList().length === 0) {
+        <div class="empty-state">
+          <div class="empty-state__icon">
+            <div class="empty-state__icon-bg"></div>
+            <div class="empty-state__icon-inner">
+              <i class="fa-solid fa-calendar-xmark"></i>
+            </div>
+          </div>
+          <h2>No attendance records found</h2>
+          <p>No attendance records found for this date.</p>
+        </div>
+      }
+
+      <!-- Load More -->
+      @if (hasMoreAttendance() && !loading()) {
+        <div class="load-more">
+          <button type="button" class="load-more-btn" (click)="loadMoreAttendance()">
+            <i class="fa-solid fa-arrow-down"></i>
+            Load More
+          </button>
+        </div>
+      }
+    } @else {
+      <!-- Regularization Tab Content -->
+      <div class="filters-card">
+        <div class="filters-row">
+          <div class="select-wrapper">
+            <select (change)="onRegularizationStatusChange($event)">
+              <option value="">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+            </select>
+            <i class="fa-solid fa-chevron-down select-wrapper__icon"></i>
+          </div>
+
+          <div class="date-input">
+            <i class="fa-solid fa-calendar date-input__icon"></i>
+            <input
+              type="date"
+              placeholder="From Date"
+              (change)="onRegularizationDateFromChange($event)"
+            />
+          </div>
+
+          <div class="date-input">
+            <i class="fa-solid fa-calendar date-input__icon"></i>
+            <input
+              type="date"
+              placeholder="To Date"
+              (change)="onRegularizationDateToChange($event)"
+            />
+          </div>
+
+          <div class="filter-actions">
+            <button
+              type="button"
+              class="refresh-btn"
+              [class.spinning]="loadingRegularizations()"
+              (click)="loadRegularizations()"
+            >
+              <i class="fa-solid fa-arrows-rotate"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section Title -->
+      <div class="section-title">
+        <i class="fa-solid fa-file-pen"></i>
+        <span>Regularization Requests</span>
+      </div>
+
+      <!-- Regularization Table (Desktop) -->
+      <div class="data-table-container">
+        <div class="data-table">
+          @if (loadingRegularizations() && regularizationList().length === 0) {
+            <div class="data-table__body">
+              @for (i of [1, 2, 3]; track i) {
+                <div class="skeleton-row">
+                  <div class="skeleton-row__avatar"></div>
+                  <div class="skeleton-row__text skeleton-row__text--medium"></div>
+                  <div class="skeleton-row__text skeleton-row__text--short"></div>
+                  <div class="skeleton-row__badge"></div>
+                  <div class="skeleton-row__actions">
+                    <span></span>
+                    <span></span>
+                  </div>
+                </div>
+              }
+            </div>
+          } @else if (regularizationList().length > 0) {
+            <!-- Table Header -->
+            <div class="data-table__header data-table__header--reg">
+              <span>Staff</span>
+              <span>Date</span>
+              <span>Reason</span>
+              <span>Status</span>
+              <span>Actions</span>
+            </div>
+
+            <!-- Table Body -->
+            <div class="data-table__body">
+              @for (reg of regularizationList(); track reg.id) {
+                <div class="data-table__row">
+                  <div class="data-table__staff">
+                    <div class="staff-avatar">
+                      {{ getInitials(reg.staffName || 'Unknown') }}
+                    </div>
+                    <div class="staff-info">
+                      <strong>{{ reg.staffName || 'Unknown Staff' }}</strong>
+                    </div>
+                  </div>
+                  <div class="data-table__date">
+                    {{ formatDate(reg.requestDate) }}
+                  </div>
+                  <div class="data-table__reason">
+                    {{ reg.reason || '-' }}
+                  </div>
+                  <div>
+                    <span class="reg-status" [class]="'reg-status--' + reg.status">
+                      {{ getRegularizationStatusLabel(reg.status) }}
+                    </span>
+                  </div>
+                  <div class="data-table__actions">
+                    @if (reg.status === 'pending') {
+                      <button
+                        type="button"
+                        class="action-btn action-btn--approve"
+                        title="Approve"
+                        (click)="approveRegularization(reg.id)"
+                      >
+                        <i class="fa-solid fa-check"></i>
+                      </button>
+                      <button
+                        type="button"
+                        class="action-btn action-btn--reject"
+                        title="Reject"
+                        (click)="openRejectModal(reg)"
+                      >
+                        <i class="fa-solid fa-xmark"></i>
+                      </button>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Mobile Cards -->
+      <div class="data-cards">
+        @for (reg of regularizationList(); track reg.id) {
+          <div class="data-card">
+            <div class="data-card__header">
+              <div class="data-card__staff">
+                <div class="staff-avatar staff-avatar--sm">
+                  {{ getInitials(reg.staffName || 'Unknown') }}
+                </div>
+                <span>{{ reg.staffName || 'Unknown' }}</span>
+              </div>
+              <span class="reg-status" [class]="'reg-status--' + reg.status">
+                {{ getRegularizationStatusLabel(reg.status) }}
+              </span>
+            </div>
+            <div class="data-card__body">
+              <div class="data-card__detail">
+                <span class="data-card__label">Date:</span>
+                <span>{{ formatDate(reg.requestDate) }}</span>
+              </div>
+              <div class="data-card__detail">
+                <span class="data-card__label">Reason:</span>
+                <span>{{ reg.reason || '-' }}</span>
+              </div>
+              @if (reg.status === 'pending') {
+                <div class="data-card__actions">
+                  <button
+                    type="button"
+                    class="card-action-btn card-action-btn--approve"
+                    (click)="approveRegularization(reg.id)"
+                  >
+                    <i class="fa-solid fa-check"></i>
+                    Approve
+                  </button>
+                  <button
+                    type="button"
+                    class="card-action-btn card-action-btn--reject"
+                    (click)="openRejectModal(reg)"
+                  >
+                    <i class="fa-solid fa-xmark"></i>
+                    Reject
+                  </button>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Empty State -->
+      @if (!loadingRegularizations() && regularizationList().length === 0) {
+        <div class="empty-state">
+          <div class="empty-state__icon">
+            <div class="empty-state__icon-bg"></div>
+            <div class="empty-state__icon-inner">
+              <i class="fa-solid fa-file-circle-xmark"></i>
+            </div>
+          </div>
+          <h2>No regularization requests</h2>
+          <p>There are no regularization requests matching your filters.</p>
+        </div>
+      }
+
+      <!-- Load More -->
+      @if (hasMoreRegularizations() && !loadingRegularizations()) {
+        <div class="load-more">
+          <button type="button" class="load-more-btn" (click)="loadMoreRegularizations()">
+            <i class="fa-solid fa-arrow-down"></i>
+            Load More
+          </button>
+        </div>
+      }
+    }
+
+    <!-- Loading More Indicator -->
+    @if ((loading() && attendanceList().length > 0) || (loadingRegularizations() && regularizationList().length > 0)) {
+      <div class="loading-more">
+        <div class="loading-more__spinner"></div>
+        <span>Loading more...</span>
+      </div>
+    }
+  </div>
+</div>
+
+<!-- Mark Attendance Modal -->
+@if (showMarkAttendanceModal()) {
+  <div class="modal-overlay" (click)="closeMarkAttendanceModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal__header">
+        <h3>
+          <i class="fa-solid fa-user-check"></i>
+          Mark Attendance
+        </h3>
+        <button type="button" class="modal__close" (click)="closeMarkAttendanceModal()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="modal__body">
+        <div class="form-group">
+          <label>Staff Member</label>
+          <select [(ngModel)]="markAttendanceForm.staffId" class="form-select">
+            <option value="">Select staff member</option>
+            @for (staff of staffList(); track staff.id) {
+              <option [value]="staff.id">{{ staff.fullName }}</option>
+            }
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Date</label>
+          <input
+            type="date"
+            [(ngModel)]="markAttendanceForm.date"
+            class="form-input"
+          />
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <div class="status-buttons">
+            <button
+              type="button"
+              class="status-btn status-btn--present"
+              [class.active]="markAttendanceForm.status === 'present'"
+              (click)="markAttendanceForm.status = 'present'"
+            >
+              <i class="fa-solid fa-check"></i>
+              Present
+            </button>
+            <button
+              type="button"
+              class="status-btn status-btn--absent"
+              [class.active]="markAttendanceForm.status === 'absent'"
+              (click)="markAttendanceForm.status = 'absent'"
+            >
+              <i class="fa-solid fa-xmark"></i>
+              Absent
+            </button>
+            <button
+              type="button"
+              class="status-btn status-btn--halfday"
+              [class.active]="markAttendanceForm.status === 'half_day'"
+              (click)="markAttendanceForm.status = 'half_day'"
+            >
+              <i class="fa-solid fa-circle-half-stroke"></i>
+              Half Day
+            </button>
+            <button
+              type="button"
+              class="status-btn status-btn--leave"
+              [class.active]="markAttendanceForm.status === 'on_leave'"
+              (click)="markAttendanceForm.status = 'on_leave'"
+            >
+              <i class="fa-solid fa-calendar-xmark"></i>
+              Leave
+            </button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Notes (Optional)</label>
+          <textarea
+            [(ngModel)]="markAttendanceForm.notes"
+            class="form-textarea"
+            rows="3"
+            placeholder="Any additional notes..."
+          ></textarea>
+        </div>
+      </div>
+      <div class="modal__footer">
+        <button type="button" class="btn btn--secondary" (click)="closeMarkAttendanceModal()">
+          Cancel
+        </button>
+        <button
+          type="button"
+          class="btn btn--primary"
+          (click)="submitMarkAttendance()"
+          [disabled]="!markAttendanceForm.staffId || !markAttendanceForm.date || !markAttendanceForm.status"
+        >
+          <i class="fa-solid fa-check"></i>
+          Mark Attendance
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Reject Regularization Modal -->
+@if (showRejectModal()) {
+  <div class="modal-overlay" (click)="closeRejectModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal__header modal__header--danger">
+        <h3>
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          Reject Regularization
+        </h3>
+        <button type="button" class="modal__close" (click)="closeRejectModal()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="modal__body">
+        <div class="warning-message">
+          <p>You are about to reject the regularization request from <strong>{{ selectedRegularization()?.staffName }}</strong>.</p>
+        </div>
+        <div class="form-group">
+          <label>Rejection Reason</label>
+          <textarea
+            [(ngModel)]="rejectReason"
+            class="form-textarea"
+            rows="4"
+            placeholder="Please provide a reason for rejection..."
+          ></textarea>
+        </div>
+      </div>
+      <div class="modal__footer">
+        <button type="button" class="btn btn--secondary" (click)="closeRejectModal()">
+          Cancel
+        </button>
+        <button
+          type="button"
+          class="btn btn--danger"
+          (click)="submitRejectRegularization()"
+          [disabled]="!rejectReason"
+        >
+          <i class="fa-solid fa-xmark"></i>
+          Reject Request
+        </button>
+      </div>
+    </div>
+  </div>
+}

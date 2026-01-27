@@ -1,0 +1,211 @@
+.table-container {
+  position: relative;
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  background: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%);
+  box-shadow:
+    0 0 0 1px rgba(99, 102, 241, 0.04),
+    0 2px 8px rgba(0, 0, 0, 0.04);
+
+  &--loading {
+    min-height: 200px;
+  }
+
+  &__loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.95) 100%);
+    backdrop-filter: blur(4px);
+    z-index: 10;
+  }
+
+  &__spinner {
+    width: 2.5rem;
+    height: 2.5rem;
+    border: 3px solid var(--color-secondary-100);
+    border-top-color: var(--color-primary-500);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
+  }
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+
+  &--striped {
+    .table__body .table__row:nth-child(even) {
+      background: linear-gradient(90deg, rgba(248, 250, 252, 0.5) 0%, rgba(241, 245, 249, 0.3) 100%);
+    }
+  }
+
+  &--hoverable {
+    .table__body .table__row:hover {
+      background: linear-gradient(90deg, rgba(99, 102, 241, 0.04) 0%, rgba(99, 102, 241, 0.02) 100%);
+    }
+  }
+
+  &--compact {
+    .table__header,
+    .table__cell {
+      padding: 0.5rem 0.75rem;
+    }
+  }
+
+  &__head {
+    background: linear-gradient(180deg, var(--color-secondary-50) 0%, rgba(241, 245, 249, 0.7) 100%);
+    border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+    position: relative;
+
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.2), transparent);
+    }
+  }
+
+  &__header {
+    padding: 0.875rem 1rem;
+    font-weight: 600;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-secondary-600);
+    white-space: nowrap;
+
+    &--sortable {
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.2s ease;
+      position: relative;
+
+      &:hover {
+        color: var(--color-primary-600);
+        background: rgba(99, 102, 241, 0.04);
+      }
+
+      &::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        width: 0;
+        height: 2px;
+        background: var(--color-primary-500);
+        transition: all 0.2s ease;
+        transform: translateX(-50%);
+      }
+
+      &:hover::after {
+        width: 60%;
+      }
+    }
+
+    &--sorted {
+      color: var(--color-primary-700);
+      background: rgba(99, 102, 241, 0.06);
+
+      &::after {
+        width: 80%;
+        background: linear-gradient(90deg, var(--color-primary-400), var(--color-primary-600));
+      }
+    }
+  }
+
+  &__header-content {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  &__sort-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease;
+
+    svg {
+      width: 1rem;
+      height: 1rem;
+    }
+
+    &--inactive {
+      opacity: 0.3;
+    }
+  }
+
+  &__body {
+    .table__row {
+      border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+      transition: all 0.2s ease;
+      cursor: pointer;
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      &:hover {
+        .table__cell:first-child {
+          position: relative;
+
+          &::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: linear-gradient(180deg, var(--color-primary-400), var(--color-primary-600));
+            border-radius: 0 2px 2px 0;
+          }
+        }
+      }
+
+      &--empty {
+        cursor: default;
+
+        &:hover {
+          background-color: transparent;
+
+          .table__cell:first-child::before {
+            display: none;
+          }
+        }
+      }
+    }
+  }
+
+  &__cell {
+    padding: 1rem 1rem;
+    color: var(--color-secondary-700);
+    vertical-align: middle;
+    position: relative;
+
+    &--empty {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--color-secondary-400);
+
+      &::before {
+        content: none !important;
+      }
+    }
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

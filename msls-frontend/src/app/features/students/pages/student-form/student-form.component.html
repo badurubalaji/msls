@@ -1,0 +1,373 @@
+<!-- Student Form Page - Multi-Step Wizard -->
+<div class="student-form-page">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-content">
+      <a
+        [routerLink]="isEditMode() ? ['/students', studentId()] : ['/students']"
+        class="back-button"
+        title="Go back"
+      >
+        <i class="fa-solid fa-arrow-left"></i>
+      </a>
+      <div class="header-icon">
+        <i class="fa-solid fa-user-plus"></i>
+      </div>
+      <div class="header-text">
+        <h1>{{ pageTitle() }}</h1>
+        @if (!isEditMode() && nextAdmissionNumber()) {
+          <p>
+            Admission Number:
+            <span class="admission-number">{{ nextAdmissionNumber() }}</span>
+          </p>
+        } @else if (!isEditMode()) {
+          <p>Step {{ currentStep() }} of {{ totalSteps }} - Complete all steps to add a student</p>
+        } @else {
+          <p>Update the student information below</p>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <!-- Loading State -->
+    @if (loading()) {
+      <div class="loading-state">
+        <div class="loading-state__spinner"></div>
+        <p class="loading-state__text">Loading student information...</p>
+      </div>
+    } @else {
+      <form [formGroup]="form" (ngSubmit)="onSubmit()">
+        <!-- Progress Indicator -->
+        <div class="progress-bar">
+          <div class="progress-steps">
+            @for (step of steps; track step.number) {
+              <div
+                class="progress-step"
+                [class.progress-step--completed]="isStepCompleted(step.number)"
+                [class.progress-step--active]="currentStep() === step.number"
+                [class.progress-step--accessible]="isStepAccessible(step.number)"
+                (click)="isStepAccessible(step.number) ? goToStep(step.number) : null"
+              >
+                <span class="progress-step__number">
+                  @if (isStepCompleted(step.number)) {
+                    <i class="fa-solid fa-check"></i>
+                  } @else {
+                    {{ step.number }}
+                  }
+                </span>
+                <span class="progress-step__label">{{ step.label }}</span>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Step 1: Photo Upload -->
+        @if (currentStep() === 1) {
+          <div class="form-card">
+            <div class="form-card__header">
+              <div class="form-card__icon form-card__icon--photo">
+                <i class="fa-solid fa-camera"></i>
+              </div>
+              <div class="form-card__title">
+                <h2>Student Photo</h2>
+                <p>Upload a recent passport-size photograph (optional)</p>
+              </div>
+            </div>
+            <div class="form-card__body">
+              <div class="photo-section">
+                <msls-photo-upload
+                  [previewUrl]="previewPhoto()"
+                  [maxSizeMB]="2"
+                  (photoSelected)="onPhotoSelected($event)"
+                  (photoRemoved)="onPhotoRemoved()"
+                />
+                <div class="photo-info">
+                  <h3>Photo Guidelines</h3>
+                  <p>Upload a clear, front-facing photo with neutral background</p>
+                  <ul class="photo-tips-list">
+                    <li><i class="fa-solid fa-check"></i> Recent passport-size photo</li>
+                    <li><i class="fa-solid fa-check"></i> Plain light background</li>
+                    <li><i class="fa-solid fa-check"></i> Face clearly visible</li>
+                    <li><i class="fa-solid fa-check"></i> JPG or PNG, max 2MB</li>
+                  </ul>
+                </div>
+              </div>
+              @if (!previewPhoto()) {
+                <div class="skip-hint">
+                  <i class="fa-solid fa-info-circle"></i>
+                  Photo is optional. You can skip this step and add a photo later.
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Step 2: Personal Information -->
+        @if (currentStep() === 2) {
+          <div class="form-card">
+            <div class="form-card__header">
+              <div class="form-card__icon form-card__icon--personal">
+                <i class="fa-solid fa-user"></i>
+              </div>
+              <div class="form-card__title">
+                <h2>Personal Information</h2>
+                <p>Enter the student's basic details</p>
+              </div>
+            </div>
+            <div class="form-card__body">
+              <div class="form-grid form-grid--3">
+                <!-- First Name -->
+                <msls-form-field
+                  label="First Name"
+                  [required]="true"
+                  [error]="getError('firstName')"
+                >
+                  <msls-input
+                    formControlName="firstName"
+                    placeholder="Enter first name"
+                  />
+                </msls-form-field>
+
+                <!-- Middle Name -->
+                <msls-form-field label="Middle Name">
+                  <msls-input
+                    formControlName="middleName"
+                    placeholder="Enter middle name"
+                  />
+                </msls-form-field>
+
+                <!-- Last Name -->
+                <msls-form-field
+                  label="Last Name"
+                  [required]="true"
+                  [error]="getError('lastName')"
+                >
+                  <msls-input
+                    formControlName="lastName"
+                    placeholder="Enter last name"
+                  />
+                </msls-form-field>
+              </div>
+
+              <div class="form-grid form-grid--3" style="margin-top: 1.5rem">
+                <!-- Date of Birth -->
+                <msls-form-field
+                  label="Date of Birth"
+                  [required]="true"
+                  [error]="getError('dateOfBirth')"
+                >
+                  <msls-input type="date" formControlName="dateOfBirth" />
+                </msls-form-field>
+
+                <!-- Gender -->
+                <msls-form-field
+                  label="Gender"
+                  [required]="true"
+                  [error]="getError('gender')"
+                >
+                  <msls-select
+                    formControlName="gender"
+                    [options]="genderOptions"
+                    placeholder="Select gender"
+                  />
+                </msls-form-field>
+
+                <!-- Blood Group -->
+                <msls-form-field label="Blood Group">
+                  <msls-select
+                    formControlName="bloodGroup"
+                    [options]="bloodGroupOptions"
+                    placeholder="Select blood group"
+                  />
+                </msls-form-field>
+              </div>
+
+              <div class="form-grid form-grid--2" style="margin-top: 1.5rem">
+                <!-- Aadhaar Number -->
+                <msls-form-field
+                  label="Aadhaar Number"
+                  hint="12-digit unique identification number"
+                  [error]="getError('aadhaarNumber')"
+                >
+                  <msls-input
+                    formControlName="aadhaarNumber"
+                    placeholder="Enter 12-digit Aadhaar number"
+                    [maxlength]="12"
+                  />
+                </msls-form-field>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- Step 3: Academic Information -->
+        @if (currentStep() === 3) {
+          <div class="form-card">
+            <div class="form-card__header">
+              <div class="form-card__icon form-card__icon--academic">
+                <i class="fa-solid fa-graduation-cap"></i>
+              </div>
+              <div class="form-card__title">
+                <h2>Academic Information</h2>
+                <p>School branch and admission details</p>
+              </div>
+            </div>
+            <div class="form-card__body">
+              <div class="form-grid form-grid--2">
+                <!-- Branch -->
+                <msls-form-field
+                  label="Branch"
+                  [required]="true"
+                  [error]="getError('branchId')"
+                >
+                  <msls-select
+                    formControlName="branchId"
+                    [options]="branchOptions()"
+                    placeholder="Select branch"
+                  />
+                </msls-form-field>
+
+                <!-- Admission Date -->
+                @if (!isEditMode()) {
+                  <msls-form-field
+                    label="Admission Date"
+                    hint="Defaults to today if not specified"
+                  >
+                    <msls-input type="date" formControlName="admissionDate" />
+                  </msls-form-field>
+                }
+              </div>
+
+              <div class="info-box">
+                <div class="info-box__icon">
+                  <i class="fa-solid fa-info"></i>
+                </div>
+                <p class="info-box__text">
+                  Class and section assignment will be done during the enrollment
+                  process. The admission number will be auto-generated based on
+                  the selected branch.
+                </p>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- Step 4: Address Information -->
+        @if (currentStep() === 4) {
+          <div class="form-card">
+            <div class="form-card__header">
+              <div class="form-card__icon form-card__icon--address">
+                <i class="fa-solid fa-location-dot"></i>
+              </div>
+              <div class="form-card__title">
+                <h2>Address Information</h2>
+                <p>Current and permanent address details</p>
+              </div>
+            </div>
+            <div class="form-card__body">
+              <!-- Current Address -->
+              <div class="address-section">
+                <div class="address-section__header">
+                  <h3>
+                    <i class="fa-solid fa-house"></i>
+                    Current Address
+                  </h3>
+                </div>
+                <msls-address-form
+                  formGroupName="currentAddress"
+                  [parentForm]="form"
+                />
+              </div>
+
+              <!-- Same as Current Checkbox -->
+              <div
+                class="same-address-toggle"
+                (click)="onSameAsCurrentChange(!form.get('sameAsCurrentAddress')?.value)"
+              >
+                <div
+                  class="same-address-toggle__checkbox"
+                  [class.same-address-toggle__checkbox--checked]="form.get('sameAsCurrentAddress')?.value"
+                >
+                  @if (form.get('sameAsCurrentAddress')?.value) {
+                    <i class="fa-solid fa-check"></i>
+                  }
+                </div>
+                <span class="same-address-toggle__label">
+                  Permanent address is same as current address
+                </span>
+              </div>
+
+              <!-- Permanent Address -->
+              @if (!form.get('sameAsCurrentAddress')?.value) {
+                <div class="address-section">
+                  <div class="address-section__header">
+                    <h3>
+                      <i class="fa-solid fa-building"></i>
+                      Permanent Address
+                    </h3>
+                  </div>
+                  <msls-address-form
+                    formGroupName="permanentAddress"
+                    [parentForm]="form"
+                  />
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Step Navigation -->
+        <div class="step-navigation">
+          <div class="step-navigation__left">
+            @if (canGoPrevious()) {
+              <button type="button" class="btn btn--secondary" (click)="prevStep()">
+                <i class="fa-solid fa-arrow-left"></i>
+                Previous
+              </button>
+            } @else {
+              <button type="button" class="btn btn--ghost" (click)="onCancel()">
+                <i class="fa-solid fa-xmark"></i>
+                Cancel
+              </button>
+            }
+          </div>
+
+          <div class="step-navigation__center">
+            <span class="step-indicator">
+              Step {{ currentStep() }} of {{ totalSteps }}
+            </span>
+          </div>
+
+          <div class="step-navigation__right">
+            @if (!isLastStep()) {
+              <button
+                type="button"
+                class="btn btn--primary"
+                [disabled]="!isCurrentStepValid()"
+                (click)="nextStep()"
+              >
+                Next
+                <i class="fa-solid fa-arrow-right"></i>
+              </button>
+            } @else {
+              <button
+                type="submit"
+                class="btn btn--primary btn--submit"
+                [disabled]="!canSubmit()"
+              >
+                @if (submitting()) {
+                  <span class="btn-spinner"></span>
+                } @else {
+                  <i class="fa-solid fa-check"></i>
+                }
+                {{ submitButtonText() }}
+              </button>
+            }
+          </div>
+        </div>
+      </form>
+    }
+  </div>
+</div>

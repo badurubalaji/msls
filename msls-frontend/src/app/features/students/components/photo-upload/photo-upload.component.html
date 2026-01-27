@@ -1,0 +1,234 @@
+<!-- Photo Upload Component -->
+<div class="photo-upload">
+  <!-- Main Upload Area -->
+  <div class="upload-area" [class.upload-area--dragging]="isDragging()">
+    <!-- Preview -->
+    <div class="preview-container">
+      @if (previewUrl()) {
+        <img
+          [src]="previewUrl()"
+          alt="Photo preview"
+          class="preview-image"
+        />
+        <div class="preview-overlay">
+          <button
+            type="button"
+            class="preview-action preview-action--edit"
+            title="Edit photo"
+            (click)="onEditPhoto()"
+          >
+            <i class="fa-solid fa-crop"></i>
+          </button>
+          <button
+            type="button"
+            class="preview-action preview-action--remove"
+            title="Remove photo"
+            (click)="onRemove()"
+          >
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        </div>
+      } @else {
+        <div
+          class="upload-placeholder"
+          (click)="triggerFileInput()"
+          (dragover)="onDragOver($event)"
+          (dragleave)="onDragLeave($event)"
+          (drop)="onDrop($event)"
+        >
+          <div class="upload-placeholder__icon">
+            <i class="fa-solid fa-camera"></i>
+          </div>
+          <p class="upload-placeholder__text">Click or drag to upload</p>
+        </div>
+      }
+    </div>
+
+    <!-- Upload Controls -->
+    <div class="upload-controls">
+      <button
+        type="button"
+        class="upload-btn upload-btn--primary"
+        (click)="triggerFileInput()"
+      >
+        <i class="fa-solid fa-upload"></i>
+        {{ previewUrl() ? 'Change Photo' : 'Upload Photo' }}
+      </button>
+
+      @if (previewUrl()) {
+        <button
+          type="button"
+          class="upload-btn upload-btn--secondary"
+          (click)="onEditPhoto()"
+        >
+          <i class="fa-solid fa-crop"></i>
+          Edit
+        </button>
+        <button
+          type="button"
+          class="upload-btn upload-btn--danger"
+          (click)="onRemove()"
+        >
+          <i class="fa-solid fa-trash"></i>
+          Remove
+        </button>
+      }
+
+      <!-- Hidden File Input -->
+      <input
+        #fileInput
+        type="file"
+        class="hidden-input"
+        [accept]="acceptTypes"
+        (change)="onFileSelected($event)"
+      />
+    </div>
+  </div>
+
+  <!-- Drag & Drop Overlay -->
+  @if (isDragging()) {
+    <div
+      class="drag-overlay"
+      (drop)="onDrop($event)"
+      (dragover)="onDragOver($event)"
+      (dragleave)="onDragLeave($event)"
+    >
+      <div class="drag-overlay__content">
+        <i class="fa-solid fa-cloud-arrow-up"></i>
+        <p>Drop photo here</p>
+      </div>
+    </div>
+  }
+
+  <!-- Image Cropper Modal -->
+  @if (showCropper()) {
+    <div class="cropper-modal">
+      <div class="cropper-modal__backdrop" (click)="onCancelCrop()"></div>
+      <div class="cropper-modal__content">
+        <!-- Header -->
+        <div class="cropper-header">
+          <h3>
+            <i class="fa-solid fa-crop"></i>
+            Edit Photo
+          </h3>
+          <button
+            type="button"
+            class="cropper-close"
+            (click)="onCancelCrop()"
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <!-- Cropper Body -->
+        <div class="cropper-body">
+          <!-- Canvas Area -->
+          <div class="cropper-canvas-container">
+            <canvas
+              #cropperCanvas
+              class="cropper-canvas"
+              (mousedown)="onCropMouseDown($event)"
+              (mousemove)="onCropMouseMove($event)"
+              (mouseup)="onCropMouseUp()"
+              (mouseleave)="onCropMouseUp()"
+            ></canvas>
+          </div>
+
+          <!-- Preview & Controls Sidebar -->
+          <div class="cropper-sidebar">
+            <!-- Preview -->
+            <div class="cropper-preview">
+              <p class="cropper-preview__label">Preview</p>
+              <div class="cropper-preview__frame">
+                <canvas #previewCanvas class="cropper-preview__canvas"></canvas>
+              </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="cropper-controls">
+              <!-- Zoom -->
+              <div class="control-group">
+                <label>
+                  <i class="fa-solid fa-magnifying-glass"></i>
+                  Zoom
+                </label>
+                <div class="control-buttons">
+                  <button type="button" (click)="onZoomOut()" title="Zoom out">
+                    <i class="fa-solid fa-minus"></i>
+                  </button>
+                  <span class="control-value">{{ (zoom() * 100).toFixed(0) }}%</span>
+                  <button type="button" (click)="onZoomIn()" title="Zoom in">
+                    <i class="fa-solid fa-plus"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Rotate -->
+              <div class="control-group">
+                <label>
+                  <i class="fa-solid fa-rotate"></i>
+                  Rotate
+                </label>
+                <div class="control-buttons">
+                  <button type="button" (click)="onRotateLeft()" title="Rotate left">
+                    <i class="fa-solid fa-rotate-left"></i>
+                  </button>
+                  <span class="control-value">{{ rotation() }}°</span>
+                  <button type="button" (click)="onRotateRight()" title="Rotate right">
+                    <i class="fa-solid fa-rotate-right"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Reset -->
+              <button
+                type="button"
+                class="reset-btn"
+                (click)="onResetCrop()"
+              >
+                <i class="fa-solid fa-arrows-rotate"></i>
+                Reset
+              </button>
+            </div>
+
+            <!-- Tips -->
+            <div class="cropper-tips">
+              <p><i class="fa-solid fa-lightbulb"></i> Tips:</p>
+              <ul>
+                <li>Drag the crop area to move it</li>
+                <li>Drag corners to resize</li>
+                <li>Use zoom for finer control</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="cropper-footer">
+          <button
+            type="button"
+            class="cropper-btn cropper-btn--secondary"
+            (click)="onCancelCrop()"
+            [disabled]="isProcessing()"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            class="cropper-btn cropper-btn--primary"
+            (click)="onApplyCrop()"
+            [disabled]="isProcessing()"
+          >
+            @if (isProcessing()) {
+              <span class="btn-spinner"></span>
+              Processing...
+            } @else {
+              <i class="fa-solid fa-check"></i>
+              Apply
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

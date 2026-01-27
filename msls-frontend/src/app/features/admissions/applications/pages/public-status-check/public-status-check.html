@@ -1,0 +1,213 @@
+<!-- Public Application Status Check Page -->
+<div class="min-h-screen bg-neutral-50 py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-md mx-auto">
+    <!-- Header -->
+    <div class="text-center mb-8">
+      <div class="mx-auto w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mb-4">
+        <i class="fa-solid fa-magnifying-glass text-primary-600 text-2xl"></i>
+      </div>
+      <h1 class="text-2xl font-bold text-neutral-900">Check Application Status</h1>
+      <p class="mt-2 text-sm text-neutral-600">
+        Enter your application number and registered phone number to check the status of your admission application.
+      </p>
+    </div>
+
+    <!-- Status Check Form -->
+    @if (!result()) {
+      <div class="bg-white shadow-sm rounded-lg p-6">
+        <form #statusForm="ngForm" (ngSubmit)="onSubmit(statusForm)" class="space-y-4">
+          <!-- Application Number -->
+          <div>
+            <label for="applicationNumber" class="block text-sm font-medium text-neutral-700 mb-1">
+              Application Number
+            </label>
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <i class="fa-solid fa-hashtag text-neutral-400"></i>
+              </div>
+              <input
+                type="text"
+                id="applicationNumber"
+                name="applicationNumber"
+                [(ngModel)]="applicationNumber"
+                required
+                pattern="^APP-\d{4}-\d{3,}$|^APP-\d{8}-\d{4}$"
+                placeholder="e.g., APP-2026-001"
+                class="block w-full pl-10 pr-3 py-2.5 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
+                [class.border-danger-500]="statusForm.controls['applicationNumber']?.touched && statusForm.controls['applicationNumber']?.invalid"
+              />
+            </div>
+            @if (statusForm.controls['applicationNumber']?.touched && statusForm.controls['applicationNumber']?.invalid) {
+              <p class="mt-1 text-xs text-danger-600">
+                Please enter a valid application number (e.g., APP-2026-001)
+              </p>
+            }
+          </div>
+
+          <!-- Phone Number -->
+          <div>
+            <label for="phone" class="block text-sm font-medium text-neutral-700 mb-1">
+              Registered Phone Number
+            </label>
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <i class="fa-solid fa-phone text-neutral-400"></i>
+              </div>
+              <input
+                type="tel"
+                id="phone"
+                name="phone"
+                [(ngModel)]="phone"
+                required
+                pattern="^[6-9]\d{9}$"
+                placeholder="e.g., 9876543210"
+                class="block w-full pl-10 pr-3 py-2.5 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
+                [class.border-danger-500]="statusForm.controls['phone']?.touched && statusForm.controls['phone']?.invalid"
+              />
+            </div>
+            @if (statusForm.controls['phone']?.touched && statusForm.controls['phone']?.invalid) {
+              <p class="mt-1 text-xs text-danger-600">
+                Please enter a valid 10-digit mobile number
+              </p>
+            }
+          </div>
+
+          <!-- Error Message -->
+          @if (errorMessage()) {
+            <div class="rounded-lg bg-danger-50 p-4">
+              <div class="flex">
+                <i class="fa-solid fa-circle-exclamation text-danger-400 mt-0.5"></i>
+                <div class="ml-3">
+                  <p class="text-sm text-danger-800">{{ errorMessage() }}</p>
+                </div>
+              </div>
+            </div>
+          }
+
+          <!-- Submit Button -->
+          <button
+            type="submit"
+            [disabled]="statusForm.invalid || isLoading()"
+            class="w-full flex justify-center items-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            @if (isLoading()) {
+              <i class="fa-solid fa-spinner fa-spin mr-2"></i>
+              Checking...
+            } @else {
+              <i class="fa-solid fa-search mr-2"></i>
+              Check Status
+            }
+          </button>
+        </form>
+      </div>
+    }
+
+    <!-- Status Result -->
+    @if (result(); as status) {
+      <div class="bg-white shadow-sm rounded-lg overflow-hidden">
+        <!-- Status Header -->
+        <div
+          class="px-6 py-4"
+          [class.bg-success-50]="statusConfig()?.variant === 'success'"
+          [class.bg-warning-50]="statusConfig()?.variant === 'warning'"
+          [class.bg-danger-50]="statusConfig()?.variant === 'danger'"
+          [class.bg-primary-50]="statusConfig()?.variant === 'primary'"
+          [class.bg-info-50]="statusConfig()?.variant === 'info'"
+          [class.bg-neutral-50]="statusConfig()?.variant === 'neutral'"
+        >
+          <div class="flex items-center justify-between">
+            <div class="flex items-center">
+              <div
+                class="w-10 h-10 rounded-full flex items-center justify-center"
+                [class.bg-success-100]="statusConfig()?.variant === 'success'"
+                [class.bg-warning-100]="statusConfig()?.variant === 'warning'"
+                [class.bg-danger-100]="statusConfig()?.variant === 'danger'"
+                [class.bg-primary-100]="statusConfig()?.variant === 'primary'"
+                [class.bg-info-100]="statusConfig()?.variant === 'info'"
+                [class.bg-neutral-100]="statusConfig()?.variant === 'neutral'"
+              >
+                <i
+                  [class]="statusConfig()?.icon"
+                  [class.text-success-600]="statusConfig()?.variant === 'success'"
+                  [class.text-warning-600]="statusConfig()?.variant === 'warning'"
+                  [class.text-danger-600]="statusConfig()?.variant === 'danger'"
+                  [class.text-primary-600]="statusConfig()?.variant === 'primary'"
+                  [class.text-info-600]="statusConfig()?.variant === 'info'"
+                  [class.text-neutral-600]="statusConfig()?.variant === 'neutral'"
+                ></i>
+              </div>
+              <div class="ml-3">
+                <p class="text-sm font-medium text-neutral-500">Application Status</p>
+                <p
+                  class="text-lg font-semibold"
+                  [class.text-success-700]="statusConfig()?.variant === 'success'"
+                  [class.text-warning-700]="statusConfig()?.variant === 'warning'"
+                  [class.text-danger-700]="statusConfig()?.variant === 'danger'"
+                  [class.text-primary-700]="statusConfig()?.variant === 'primary'"
+                  [class.text-info-700]="statusConfig()?.variant === 'info'"
+                  [class.text-neutral-700]="statusConfig()?.variant === 'neutral'"
+                >
+                  {{ statusConfig()?.label }}
+                </p>
+              </div>
+            </div>
+          </div>
+          @if (statusConfig()?.description) {
+            <p class="mt-2 text-sm text-neutral-600">{{ statusConfig()?.description }}</p>
+          }
+        </div>
+
+        <!-- Application Details -->
+        <div class="px-6 py-4 border-t border-neutral-200">
+          <dl class="space-y-3">
+            <div class="flex justify-between">
+              <dt class="text-sm text-neutral-500">Application Number</dt>
+              <dd class="text-sm font-medium text-neutral-900">{{ status.applicationNumber }}</dd>
+            </div>
+            <div class="flex justify-between">
+              <dt class="text-sm text-neutral-500">Student Name</dt>
+              <dd class="text-sm font-medium text-neutral-900">{{ status.studentName }}</dd>
+            </div>
+            <div class="flex justify-between">
+              <dt class="text-sm text-neutral-500">Class Applied</dt>
+              <dd class="text-sm font-medium text-neutral-900">{{ status.className }}</dd>
+            </div>
+            @if (status.submittedAt) {
+              <div class="flex justify-between">
+                <dt class="text-sm text-neutral-500">Submitted On</dt>
+                <dd class="text-sm font-medium text-neutral-900">{{ formatDate(status.submittedAt) }}</dd>
+              </div>
+            }
+          </dl>
+        </div>
+
+        <!-- Review Notes -->
+        @if (status.reviewNotes) {
+          <div class="px-6 py-4 border-t border-neutral-200 bg-neutral-50">
+            <p class="text-sm font-medium text-neutral-700 mb-1">Remarks</p>
+            <p class="text-sm text-neutral-600">{{ status.reviewNotes }}</p>
+          </div>
+        }
+
+        <!-- Actions -->
+        <div class="px-6 py-4 border-t border-neutral-200 bg-neutral-50">
+          <button
+            type="button"
+            (click)="reset()"
+            class="w-full flex justify-center items-center py-2.5 px-4 border border-neutral-300 rounded-lg shadow-sm text-sm font-medium text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
+          >
+            <i class="fa-solid fa-arrow-left mr-2"></i>
+            Check Another Application
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- Help Text -->
+    <div class="mt-6 text-center">
+      <p class="text-xs text-neutral-500">
+        For any queries, please contact the school administration office.
+      </p>
+    </div>
+  </div>
+</div>

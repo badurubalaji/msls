@@ -1,0 +1,187 @@
+<div class="enrollment-page">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-content">
+      <msls-button variant="secondary" size="sm" (click)="goBack()">
+        <i class="fa-solid fa-arrow-left"></i>
+        Back to Merit List
+      </msls-button>
+      <div class="header-title">
+        <h1>Pending Enrollments</h1>
+        <p class="subtitle">Complete enrollment for students who have accepted their offers</p>
+      </div>
+    </div>
+    <div class="header-stats">
+      <div class="stat-card">
+        <span class="stat-value">{{ totalCandidates() }}</span>
+        <span class="stat-label">Pending</span>
+      </div>
+      <div class="stat-card stat-success">
+        <span class="stat-value">{{ enrolledCount() }}</span>
+        <span class="stat-label">Enrolled Today</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <msls-card>
+    @if (loading()) {
+      <div class="loading-state">
+        <i class="fa-solid fa-spinner fa-spin"></i>
+        <span>Loading pending enrollments...</span>
+      </div>
+    } @else if (candidates().length === 0) {
+      <div class="empty-state">
+        <i class="fa-solid fa-user-graduate"></i>
+        <h3>No Pending Enrollments</h3>
+        <p>All students with accepted offers have been enrolled.</p>
+        <msls-button variant="primary" (click)="goBack()">
+          View Merit List
+        </msls-button>
+      </div>
+    } @else {
+      <div class="enrollment-table">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Student</th>
+              <th>Parent/Guardian</th>
+              <th>Class</th>
+              <th>Section</th>
+              <th>Offer Accepted</th>
+              <th class="actions-col">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (candidate of candidates(); track candidate.id; let i = $index) {
+              <tr>
+                <td class="rank-cell">{{ i + 1 }}</td>
+                <td>
+                  <div class="student-info">
+                    <span class="student-name">{{ candidate.studentName }}</span>
+                    @if (candidate.rank) {
+                      <span class="merit-rank">Merit Rank #{{ candidate.rank }}</span>
+                    }
+                  </div>
+                </td>
+                <td>
+                  <div class="parent-info">
+                    <span class="parent-name">{{ candidate.parentName }}</span>
+                    <span class="parent-phone">{{ candidate.parentPhone }}</span>
+                  </div>
+                </td>
+                <td>{{ candidate.className }}</td>
+                <td>
+                  @if (candidate.sectionAssigned) {
+                    <msls-badge variant="info" size="sm">
+                      {{ candidate.sectionAssigned }}
+                    </msls-badge>
+                  } @else {
+                    <span class="not-assigned">Not assigned</span>
+                  }
+                </td>
+                <td class="date-cell">
+                  {{ formatDate(candidate.offerAcceptedAt || '') }}
+                </td>
+                <td class="actions-cell">
+                  <msls-button
+                    variant="primary"
+                    size="sm"
+                    (click)="openEnrollDialog(candidate)"
+                  >
+                    <i class="fa-solid fa-user-plus"></i>
+                    Enroll
+                  </msls-button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </msls-card>
+
+  <!-- Enrollment Dialog -->
+  @if (showEnrollDialog()) {
+    <div class="dialog-overlay" (click)="closeEnrollDialog()">
+      <div class="dialog-content" (click)="$event.stopPropagation()">
+        <div class="dialog-header">
+          <h2>Complete Enrollment</h2>
+          <button class="close-btn" (click)="closeEnrollDialog()">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        @if (selectedCandidate(); as candidate) {
+          <div class="dialog-body">
+            <!-- Student Summary -->
+            <div class="student-summary">
+              <div class="summary-avatar">
+                <i class="fa-solid fa-user-graduate"></i>
+              </div>
+              <div class="summary-details">
+                <h3>{{ candidate.studentName }}</h3>
+                <p>{{ candidate.className }} | {{ candidate.sectionAssigned || 'No section assigned' }}</p>
+                <p class="parent-detail">Parent: {{ candidate.parentName }} ({{ candidate.parentPhone }})</p>
+              </div>
+            </div>
+
+            <!-- Enrollment Form -->
+            <form [formGroup]="enrollForm" class="enrollment-form">
+              <msls-form-field label="Section" hint="Confirm or change the section assignment">
+                <msls-select
+                  formControlName="sectionId"
+                  [options]="sectionOptions()"
+                  placeholder="Select section"
+                />
+              </msls-form-field>
+
+              <msls-form-field label="Roll Number" hint="Optional - leave blank for auto-assignment">
+                <msls-input
+                  formControlName="rollNumber"
+                  placeholder="e.g., 001"
+                />
+              </msls-form-field>
+
+              <msls-form-field
+                label="Admission Date"
+                [required]="true"
+                [error]="enrollForm.get('admissionDate')?.touched && enrollForm.get('admissionDate')?.errors?.['required'] ? 'Admission date is required' : ''"
+              >
+                <msls-input
+                  type="date"
+                  formControlName="admissionDate"
+                />
+              </msls-form-field>
+
+              <msls-form-field label="Remarks" hint="Optional notes about the enrollment">
+                <textarea
+                  formControlName="remarks"
+                  class="remarks-textarea"
+                  rows="2"
+                  placeholder="Add any notes..."
+                ></textarea>
+              </msls-form-field>
+            </form>
+          </div>
+
+          <div class="dialog-footer">
+            <msls-button variant="secondary" (click)="closeEnrollDialog()">
+              Cancel
+            </msls-button>
+            <msls-button
+              variant="primary"
+              [loading]="enrolling()"
+              [disabled]="!enrollForm.valid"
+              (click)="onEnroll()"
+            >
+              <i class="fa-solid fa-check"></i>
+              Complete Enrollment
+            </msls-button>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>

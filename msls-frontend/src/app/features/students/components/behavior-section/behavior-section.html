@@ -1,0 +1,283 @@
+<!-- Behavior Section -->
+<div class="behavior-section">
+  <!-- Behavior Card -->
+  <div class="detail-card">
+    <div class="detail-card__header">
+      <div class="detail-card__icon detail-card__icon--behavior">
+        <i class="fa-solid fa-clipboard-check"></i>
+      </div>
+      <h2 class="detail-card__title">Behavioral Records</h2>
+      <button type="button" class="add-btn" (click)="openIncidentForm()">
+        <i class="fa-solid fa-plus"></i>
+        Record Incident
+      </button>
+    </div>
+
+    <div class="detail-card__body">
+      @if (loading()) {
+        <div class="loading-state">
+          <msls-spinner size="md" />
+        </div>
+      } @else {
+        <!-- Summary Cards -->
+        @if (summary(); as s) {
+          <div class="summary-grid">
+            <div class="summary-card">
+              <div class="summary-card__value">{{ s.totalIncidents }}</div>
+              <div class="summary-card__label">Total Incidents</div>
+            </div>
+            <div class="summary-card summary-card--success">
+              <div class="summary-card__icon">
+                <i class="fa-solid fa-star"></i>
+              </div>
+              <div class="summary-card__value">{{ s.positiveCount }}</div>
+              <div class="summary-card__label">Positive</div>
+            </div>
+            <div class="summary-card summary-card--warning">
+              <div class="summary-card__icon">
+                <i class="fa-solid fa-exclamation"></i>
+              </div>
+              <div class="summary-card__value">{{ s.minorInfractionCount + s.majorViolationCount }}</div>
+              <div class="summary-card__label">Infractions</div>
+            </div>
+            <div class="summary-card" [class.summary-card--success]="s.trend === 'improving'" [class.summary-card--danger]="s.trend === 'declining'">
+              <div class="summary-card__icon">
+                <i class="fa-solid" [ngClass]="getTrendIcon(s.trend)"></i>
+              </div>
+              <div class="summary-card__value summary-card__value--text">{{ s.trend | titlecase }}</div>
+              <div class="summary-card__label">Trend</div>
+            </div>
+          </div>
+
+          <!-- Month Comparison -->
+          <div class="month-comparison">
+            <span class="month-stat">This month: <strong>{{ s.thisMonthCount }}</strong></span>
+            <span class="month-stat">Last month: <strong>{{ s.lastMonthCount }}</strong></span>
+            @if (s.pendingFollowUps > 0) {
+              <span class="month-stat month-stat--alert">
+                <i class="fa-solid fa-calendar-check"></i>
+                {{ s.pendingFollowUps }} pending follow-up{{ s.pendingFollowUps > 1 ? 's' : '' }}
+              </span>
+            }
+          </div>
+        }
+
+        <!-- Recent Incidents List -->
+        <div class="section-header">
+          <h3>Recent Incidents</h3>
+        </div>
+
+        @if (hasIncidents()) {
+          <div class="incident-list">
+            @for (incident of recentIncidents(); track incident.id) {
+              <div class="incident-card">
+                <div class="incident-card__header">
+                  <div class="incident-card__type">
+                    <msls-badge [variant]="getIncidentTypeVariant(incident.incidentType)">
+                      {{ incident.incidentTypeLabel }}
+                    </msls-badge>
+                    <msls-badge [variant]="getSeverityVariant(incident.severity)" size="sm">
+                      {{ incident.severityLabel }}
+                    </msls-badge>
+                  </div>
+                  <div class="incident-card__actions">
+                    <button type="button" class="action-btn action-btn--edit" (click)="openIncidentForm(incident)" title="Edit">
+                      <i class="fa-solid fa-pen"></i>
+                    </button>
+                    <button type="button" class="action-btn action-btn--delete" (click)="deleteIncident(incident)" title="Delete">
+                      <i class="fa-solid fa-trash"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="incident-card__body">
+                  <div class="incident-card__meta">
+                    <span class="meta-item">
+                      <i class="fa-solid fa-calendar"></i>
+                      {{ formatDate(incident.incidentDate) }}
+                    </span>
+                    <span class="meta-item">
+                      <i class="fa-solid fa-clock"></i>
+                      {{ formatTime(incident.incidentTime) }}
+                    </span>
+                    @if (incident.location) {
+                      <span class="meta-item">
+                        <i class="fa-solid fa-location-dot"></i>
+                        {{ incident.location }}
+                      </span>
+                    }
+                  </div>
+
+                  <p class="incident-card__description">{{ incident.description }}</p>
+
+                  <div class="incident-card__action-taken">
+                    <strong>Action Taken:</strong> {{ incident.actionTaken }}
+                  </div>
+
+                  @if (incident.parentMeetingRequired) {
+                    <div class="incident-card__flags">
+                      <span class="flag flag--meeting">
+                        <i class="fa-solid fa-users"></i>
+                        Parent meeting required
+                        @if (incident.parentNotified) {
+                          <span class="flag-status flag-status--done">
+                            <i class="fa-solid fa-check"></i> Notified
+                          </span>
+                        }
+                      </span>
+                    </div>
+                  }
+
+                  @if (incident.reporterName) {
+                    <div class="incident-card__reporter">
+                      Reported by: {{ incident.reporterName }}
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="empty-state">
+            <i class="fa-solid fa-clipboard-check"></i>
+            <p>No behavioral incidents recorded</p>
+          </div>
+        }
+      }
+    </div>
+  </div>
+</div>
+
+<!-- Incident Form Modal -->
+@if (showIncidentForm()) {
+  <div class="modal-overlay" (click)="closeIncidentForm()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal__header">
+        <h3>{{ editingIncident() ? 'Edit Incident' : 'Record Incident' }}</h3>
+        <button type="button" class="modal__close" (click)="closeIncidentForm()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="modal__body">
+        <div class="form-grid">
+          <!-- Incident Type -->
+          <div class="form-group">
+            <label>Incident Type <span class="required">*</span></label>
+            <select (change)="onIncidentTypeChange($event)">
+              @for (option of incidentTypeOptions; track option.value) {
+                <option [value]="option.value" [selected]="option.value === incidentForm().incidentType">{{ option.label }}</option>
+              }
+            </select>
+          </div>
+
+          <!-- Severity -->
+          <div class="form-group">
+            <label>Severity</label>
+            <select (change)="onSeverityChange($event)">
+              @for (option of severityOptions; track option.value) {
+                <option [value]="option.value" [selected]="option.value === incidentForm().severity">{{ option.label }}</option>
+              }
+            </select>
+          </div>
+
+          <!-- Date -->
+          <div class="form-group">
+            <label>Date <span class="required">*</span></label>
+            <input
+              type="date"
+              [value]="incidentForm().incidentDate"
+              (change)="onDateChange($event)"
+            />
+          </div>
+
+          <!-- Time -->
+          <div class="form-group">
+            <label>Time <span class="required">*</span></label>
+            <input
+              type="time"
+              [value]="incidentForm().incidentTime"
+              (change)="onTimeChange($event)"
+            />
+          </div>
+
+          <!-- Location -->
+          <div class="form-group form-group--full">
+            <label>Location</label>
+            <input
+              type="text"
+              [value]="incidentForm().location ?? ''"
+              (input)="onLocationInput($event)"
+              placeholder="e.g., Classroom 5A, Playground, Cafeteria"
+            />
+          </div>
+
+          <!-- Description -->
+          <div class="form-group form-group--full">
+            <label>Description <span class="required">*</span></label>
+            <textarea
+              rows="3"
+              [value]="incidentForm().description"
+              (input)="onDescriptionInput($event)"
+              placeholder="Describe what happened..."
+            ></textarea>
+          </div>
+
+          <!-- Witnesses -->
+          <div class="form-group form-group--full">
+            <label>Witnesses</label>
+            <input
+              type="text"
+              [value]="incidentForm().witnesses?.join(', ') ?? ''"
+              (input)="onWitnessesInput($event)"
+              placeholder="Separate names with commas"
+            />
+          </div>
+
+          <!-- Student Response -->
+          <div class="form-group form-group--full">
+            <label>Student Response</label>
+            <textarea
+              rows="2"
+              [value]="incidentForm().studentResponse ?? ''"
+              (input)="onStudentResponseInput($event)"
+              placeholder="How did the student respond?"
+            ></textarea>
+          </div>
+
+          <!-- Action Taken -->
+          <div class="form-group form-group--full">
+            <label>Action Taken <span class="required">*</span></label>
+            <textarea
+              rows="2"
+              [value]="incidentForm().actionTaken"
+              (input)="onActionTakenInput($event)"
+              placeholder="What action was taken?"
+            ></textarea>
+          </div>
+
+          <!-- Parent Meeting Required -->
+          <div class="form-group form-group--full">
+            <label class="checkbox-label">
+              <input
+                type="checkbox"
+                [checked]="incidentForm().parentMeetingRequired ?? false"
+                (change)="onParentMeetingChange($event)"
+              />
+              Parent meeting required
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal__footer">
+        <button type="button" class="btn-secondary" (click)="closeIncidentForm()">
+          Cancel
+        </button>
+        <button type="button" class="btn-primary" (click)="saveIncident()">
+          {{ editingIncident() ? 'Update' : 'Save' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

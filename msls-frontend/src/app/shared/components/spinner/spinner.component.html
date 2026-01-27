@@ -1,0 +1,32 @@
+<div
+  [class]="spinnerClasses()"
+  role="status"
+  [attr.aria-label]="label()"
+>
+  <svg
+    class="msls-spinner__svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    aria-hidden="true"
+  >
+    <!-- Background track -->
+    <circle
+      class="msls-spinner__track"
+      cx="12"
+      cy="12"
+      r="10"
+      stroke="currentColor"
+      stroke-width="3"
+    />
+    <!-- Animated spinner head -->
+    <path
+      class="msls-spinner__head"
+      d="M12 2C6.47715 2 2 6.47715 2 12"
+      stroke="currentColor"
+      stroke-width="3"
+      stroke-linecap="round"
+    />
+  </svg>
+  <span class="msls-spinner__label sr-only">{{ label() }}</span>
+</div>

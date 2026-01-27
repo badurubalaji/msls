@@ -1,0 +1,95 @@
+<!-- Table Container -->
+<div
+  class="table-container"
+  [class.table-container--loading]="loading()"
+>
+  <!-- Loading Overlay -->
+  @if (loading()) {
+    <div class="table-container__loading">
+      <div class="table-container__spinner"></div>
+    </div>
+  }
+
+  <!-- Table -->
+  <table
+    class="table"
+    [class.table--striped]="striped()"
+    [class.table--hoverable]="hoverable()"
+    [class.table--compact]="compact()"
+  >
+    <!-- Header -->
+    <thead class="table__head">
+      <tr>
+        @for (column of columns(); track trackByKey($index, column)) {
+          <th
+            class="table__header"
+            [class.table__header--sortable]="isColumnSortable(column)"
+            [class.table__header--sorted]="isSorted(column.key)"
+            [style.width]="column.width"
+            [style.text-align]="column.align || 'left'"
+            (click)="onHeaderClick(column)"
+          >
+            <div class="table__header-content">
+              <span>{{ column.label }}</span>
+
+              <!-- Sort Icon -->
+              @if (isColumnSortable(column)) {
+                <span class="table__sort-icon">
+                  @switch (getSortIcon(column.key)) {
+                    @case ('asc') {
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd" />
+                      </svg>
+                    }
+                    @case ('desc') {
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                      </svg>
+                    }
+                    @default {
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="table__sort-icon--inactive">
+                        <path fill-rule="evenodd" d="M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 01-1.414-1.414l3-3A1 1 0 0110 3zm-3.707 9.293a1 1 0 011.414 0L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+                      </svg>
+                    }
+                  }
+                </span>
+              }
+            </div>
+          </th>
+        }
+      </tr>
+    </thead>
+
+    <!-- Body -->
+    <tbody class="table__body">
+      @for (row of sortedData(); track trackByIndex($index)) {
+        <tr
+          class="table__row"
+          (click)="onRowClick(row)"
+        >
+          @for (column of columns(); track trackByKey($index, column)) {
+            <td
+              class="table__cell"
+              [style.text-align]="column.align || 'left'"
+            >
+              <!-- Custom template or default value -->
+              @if (getCellTemplate(column.key); as template) {
+                <ng-container
+                  *ngTemplateOutlet="template; context: { $implicit: row, value: getCellValue(row, column.key) }"
+                ></ng-container>
+              } @else {
+                {{ getCellValue(row, column.key) }}
+              }
+            </td>
+          }
+        </tr>
+      } @empty {
+        <tr class="table__row table__row--empty">
+          <td [attr.colspan]="columns().length" class="table__cell table__cell--empty">
+            {{ emptyMessage() }}
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

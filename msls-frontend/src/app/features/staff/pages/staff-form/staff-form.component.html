@@ -1,0 +1,435 @@
+<!-- Staff Form Page -->
+<div class="staff-form-page">
+  <div class="form-container">
+    <!-- Header -->
+    <div class="form-header">
+      <button type="button" class="back-btn" (click)="onCancel()">
+        <i class="fa-solid fa-arrow-left"></i>
+      </button>
+      <div class="form-header__content">
+        <h1>{{ pageTitle() }}</h1>
+        @if (!isEditMode() && nextEmployeeId()) {
+          <p class="employee-id-preview">Employee ID: {{ nextEmployeeId() }}</p>
+        }
+      </div>
+    </div>
+
+    @if (loading()) {
+      <div class="loading-state">
+        <div class="loading-spinner"></div>
+        <p>Loading...</p>
+      </div>
+    } @else {
+      <!-- Step Indicator -->
+      <div class="steps-container">
+        @for (step of steps; track step.number) {
+          <div
+            class="step"
+            [class.active]="currentStep() === step.number"
+            [class.completed]="currentStep() > step.number"
+            (click)="goToStep(step.number)"
+          >
+            <div class="step__circle">
+              @if (currentStep() > step.number) {
+                <i class="fa-solid fa-check"></i>
+              } @else {
+                <i class="fa-solid {{ step.icon }}"></i>
+              }
+            </div>
+            <span class="step__label">{{ step.label }}</span>
+          </div>
+          @if (step.number < totalSteps) {
+            <div class="step__connector" [class.completed]="currentStep() > step.number"></div>
+          }
+        }
+      </div>
+
+      <!-- Form -->
+      <form [formGroup]="form" (ngSubmit)="onSubmit()">
+        <!-- Step 1: Personal Information -->
+        @if (currentStep() === 1) {
+          <div class="form-section">
+            <h2 class="section-title">
+              <i class="fa-solid fa-user"></i>
+              Personal Information
+            </h2>
+
+            <!-- Photo Upload -->
+            <div class="photo-upload-section">
+              <div class="photo-preview" [class.has-photo]="previewPhoto()">
+                @if (previewPhoto()) {
+                  <img [src]="previewPhoto()" alt="Staff photo" />
+                  <button type="button" class="remove-photo" (click)="removePhoto()">
+                    <i class="fa-solid fa-xmark"></i>
+                  </button>
+                } @else {
+                  <i class="fa-solid fa-user"></i>
+                }
+              </div>
+              <div class="photo-actions">
+                <label class="upload-btn">
+                  <i class="fa-solid fa-camera"></i>
+                  {{ previewPhoto() ? 'Change Photo' : 'Upload Photo' }}
+                  <input type="file" accept="image/*" (change)="onPhotoSelected($event)" hidden />
+                </label>
+                <p class="photo-hint">JPG or PNG, max 5MB</p>
+              </div>
+            </div>
+
+            <div class="form-grid">
+              <msls-form-field label="First Name" [required]="true">
+                <msls-input
+                  formControlName="firstName"
+                  placeholder="Enter first name"
+                />
+              </msls-form-field>
+
+              <msls-form-field label="Middle Name">
+                <msls-input
+                  formControlName="middleName"
+                  placeholder="Enter middle name"
+                />
+              </msls-form-field>
+
+              <msls-form-field label="Last Name" [required]="true">
+                <msls-input
+                  formControlName="lastName"
+                  placeholder="Enter last name"
+                />
+              </msls-form-field>
+
+              <msls-form-field label="Date of Birth" [required]="true">
+                <msls-input
+                  type="date"
+                  formControlName="dateOfBirth"
+                />
+              </msls-form-field>
+
+              <msls-form-field label="Gender" [required]="true">
+                <msls-select
+                  formControlName="gender"
+                  [options]="genderOptions"
+                  placeholder="Select gender"
+                />
+              </msls-form-field>
+
+              <msls-form-field label="Blood Group">
+                <msls-select
+                  formControlName="bloodGroup"
+                  [options]="bloodGroupOptions"
+                />
+              </msls-form-field>
+
+              <msls-form-field label="Nationality">
+                <msls-input
+                  formControlName="nationality"
+                  placeholder="Enter nationality"
+                />
+              </msls-form-field>
+
+              <msls-form-field label="Religion">
+                <msls-input
+                  formControlName="religion"
+                  placeholder="Enter religion"
+                />
+              </msls-form-field>
+
+              <msls-form-field label="Marital Status">
+                <msls-select
+                  formControlName="maritalStatus"
+                  [options]="maritalStatusOptions"
+                />
+              </msls-form-field>
+            </div>
+          </div>
+        }
+
+        <!-- Step 2: Contact Information -->
+        @if (currentStep() === 2) {
+          <div class="form-section">
+            <h2 class="section-title">
+              <i class="fa-solid fa-address-book"></i>
+              Contact Information
+            </h2>
+
+            <div class="form-grid">
+              <msls-form-field label="Work Email" [required]="true">
+                <msls-input
+                  type="email"
+                  formControlName="workEmail"
+                  placeholder="work@example.com"
+                />
+              </msls-form-field>
+
+              <msls-form-field label="Work Phone" [required]="true">
+                <msls-input
+                  type="tel"
+                  formControlName="workPhone"
+                  placeholder="10-digit phone"
+                />
+              </msls-form-field>
+
+              <msls-form-field label="Personal Email">
+                <msls-input
+                  type="email"
+                  formControlName="personalEmail"
+                  placeholder="personal@example.com"
+                />
+              </msls-form-field>
+
+              <msls-form-field label="Personal Phone">
+                <msls-input
+                  type="tel"
+                  formControlName="personalPhone"
+                  placeholder="10-digit phone"
+                />
+              </msls-form-field>
+            </div>
+
+            <h3 class="subsection-title">Emergency Contact</h3>
+            <div class="form-grid">
+              <msls-form-field label="Contact Name">
+                <msls-input
+                  formControlName="emergencyContactName"
+                  placeholder="Emergency contact name"
+                />
+              </msls-form-field>
+
+              <msls-form-field label="Contact Phone">
+                <msls-input
+                  type="tel"
+                  formControlName="emergencyContactPhone"
+                  placeholder="10-digit phone"
+                />
+              </msls-form-field>
+
+              <msls-form-field label="Relation">
+                <msls-input
+                  formControlName="emergencyContactRelation"
+                  placeholder="e.g., Spouse, Parent"
+                />
+              </msls-form-field>
+            </div>
+          </div>
+        }
+
+        <!-- Step 3: Employment Information -->
+        @if (currentStep() === 3) {
+          <div class="form-section">
+            <h2 class="section-title">
+              <i class="fa-solid fa-briefcase"></i>
+              Employment Information
+            </h2>
+
+            <div class="form-grid">
+              <msls-form-field label="Branch" [required]="true">
+                <msls-select
+                  formControlName="branchId"
+                  [options]="branchOptions()"
+                />
+              </msls-form-field>
+
+              <msls-form-field label="Staff Type" [required]="true">
+                <msls-select
+                  formControlName="staffType"
+                  [options]="staffTypeOptions"
+                />
+              </msls-form-field>
+
+              <msls-form-field label="Department">
+                <msls-select
+                  formControlName="departmentId"
+                  [options]="departmentOptions()"
+                />
+              </msls-form-field>
+
+              <msls-form-field label="Designation">
+                <msls-select
+                  formControlName="designationId"
+                  [options]="designationOptions()"
+                />
+              </msls-form-field>
+
+              <msls-form-field label="Join Date" [required]="true">
+                <msls-input
+                  type="date"
+                  formControlName="joinDate"
+                />
+              </msls-form-field>
+
+              <msls-form-field label="Confirmation Date">
+                <msls-input
+                  type="date"
+                  formControlName="confirmationDate"
+                />
+              </msls-form-field>
+
+              <msls-form-field label="Probation End Date">
+                <msls-input
+                  type="date"
+                  formControlName="probationEndDate"
+                />
+              </msls-form-field>
+            </div>
+
+            <msls-form-field label="Bio" class="full-width">
+              <textarea
+                formControlName="bio"
+                placeholder="Brief description about the staff member..."
+                rows="4"
+                class="bio-textarea"
+              ></textarea>
+            </msls-form-field>
+          </div>
+        }
+
+        <!-- Step 4: Address Information -->
+        @if (currentStep() === 4) {
+          <div class="form-section">
+            <h2 class="section-title">
+              <i class="fa-solid fa-location-dot"></i>
+              Address Information
+            </h2>
+
+            <h3 class="subsection-title">Current Address</h3>
+            <div class="form-grid" formGroupName="currentAddress">
+              <msls-form-field label="Address Line 1">
+                <msls-input
+                  formControlName="addressLine1"
+                  placeholder="Street address"
+                />
+              </msls-form-field>
+
+              <msls-form-field label="Address Line 2">
+                <msls-input
+                  formControlName="addressLine2"
+                  placeholder="Apartment, suite, etc."
+                />
+              </msls-form-field>
+
+              <msls-form-field label="City">
+                <msls-input
+                  formControlName="city"
+                  placeholder="City"
+                />
+              </msls-form-field>
+
+              <msls-form-field label="State">
+                <msls-input
+                  formControlName="state"
+                  placeholder="State"
+                />
+              </msls-form-field>
+
+              <msls-form-field label="Pincode">
+                <msls-input
+                  formControlName="pincode"
+                  placeholder="6-digit pincode"
+                />
+              </msls-form-field>
+
+              <msls-form-field label="Country">
+                <msls-input
+                  formControlName="country"
+                  placeholder="Country"
+                />
+              </msls-form-field>
+            </div>
+
+            <div class="same-address-check">
+              <label>
+                <input type="checkbox" formControlName="sameAsCurrent" />
+                <span>Permanent address is same as current</span>
+              </label>
+            </div>
+
+            @if (!form.get('sameAsCurrent')?.value) {
+              <h3 class="subsection-title">Permanent Address</h3>
+              <div class="form-grid" formGroupName="permanentAddress">
+                <msls-form-field label="Address Line 1">
+                  <msls-input
+                    formControlName="addressLine1"
+                    placeholder="Street address"
+                  />
+                </msls-form-field>
+
+                <msls-form-field label="Address Line 2">
+                  <msls-input
+                    formControlName="addressLine2"
+                    placeholder="Apartment, suite, etc."
+                  />
+                </msls-form-field>
+
+                <msls-form-field label="City">
+                  <msls-input
+                    formControlName="city"
+                    placeholder="City"
+                  />
+                </msls-form-field>
+
+                <msls-form-field label="State">
+                  <msls-input
+                    formControlName="state"
+                    placeholder="State"
+                  />
+                </msls-form-field>
+
+                <msls-form-field label="Pincode">
+                  <msls-input
+                    formControlName="pincode"
+                    placeholder="6-digit pincode"
+                  />
+                </msls-form-field>
+
+                <msls-form-field label="Country">
+                  <msls-input
+                    formControlName="country"
+                    placeholder="Country"
+                  />
+                </msls-form-field>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Form Actions -->
+        <div class="form-actions">
+          <button
+            type="button"
+            class="btn-secondary"
+            [disabled]="currentStep() === 1"
+            (click)="prevStep()"
+          >
+            <i class="fa-solid fa-arrow-left"></i>
+            Previous
+          </button>
+
+          @if (currentStep() < totalSteps) {
+            <button
+              type="button"
+              class="btn-primary"
+              (click)="nextStep()"
+            >
+              Next
+              <i class="fa-solid fa-arrow-right"></i>
+            </button>
+          } @else {
+            <button
+              type="submit"
+              class="btn-primary btn-submit"
+              [disabled]="submitting()"
+            >
+              @if (submitting()) {
+                <i class="fa-solid fa-spinner fa-spin"></i>
+                Saving...
+              } @else {
+                <i class="fa-solid fa-check"></i>
+                {{ submitButtonText() }}
+              }
+            </button>
+          }
+        </div>
+      </form>
+    }
+  </div>
+</div>

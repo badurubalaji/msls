@@ -1,0 +1,464 @@
+<!-- Staff List Page -->
+<div class="staff-list-page">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-content">
+      <div class="header-left">
+        <div class="header-icon">
+          <i class="fa-solid fa-users-gear"></i>
+        </div>
+        <div class="header-text">
+          <h1>Staff</h1>
+          <p>Manage teaching and non-teaching staff</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button type="button" class="add-staff-btn" (click)="onAddStaff()">
+          <i class="fa-solid fa-plus"></i>
+          <span>Add Staff</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <!-- Stats Grid -->
+    <div class="stats-grid">
+      <!-- Total Staff -->
+      <div class="stat-card stat-card--total">
+        <div class="stat-card__header">
+          <div>
+            <p class="stat-card__value">{{ totalCount() }}</p>
+            <p class="stat-card__label">Total Staff</p>
+          </div>
+          <div class="stat-card__icon">
+            <i class="fa-solid fa-users"></i>
+          </div>
+        </div>
+        <div class="stat-card__footer">All registered staff members</div>
+      </div>
+
+      <!-- Active Staff -->
+      <div class="stat-card stat-card--active">
+        <div class="stat-card__header">
+          <div>
+            <p class="stat-card__value">{{ getActiveCount() }}</p>
+            <p class="stat-card__label">Active</p>
+          </div>
+          <div class="stat-card__icon">
+            <i class="fa-solid fa-user-check"></i>
+          </div>
+        </div>
+        <div class="stat-card__footer">
+          <div class="active-indicator">
+            <span class="active-indicator__dot"></span>
+            <span class="active-indicator__text">Currently employed</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Teaching Staff -->
+      <div class="stat-card stat-card--teaching">
+        <div class="stat-card__header">
+          <div>
+            <p class="stat-card__value">{{ getTeachingCount() }}</p>
+            <p class="stat-card__label">Teaching</p>
+          </div>
+          <div class="stat-card__icon">
+            <i class="fa-solid fa-chalkboard-user"></i>
+          </div>
+        </div>
+        <div class="stat-card__footer">Teaching staff members</div>
+      </div>
+
+      <!-- On Leave -->
+      <div class="stat-card stat-card--leave">
+        <div class="stat-card__header">
+          <div>
+            <p class="stat-card__value">{{ getOnLeaveCount() }}</p>
+            <p class="stat-card__label">On Leave</p>
+          </div>
+          <div class="stat-card__icon">
+            <i class="fa-solid fa-calendar-xmark"></i>
+          </div>
+        </div>
+        <div class="stat-card__footer">Currently on leave</div>
+      </div>
+    </div>
+
+    <!-- Search & Filters Card -->
+    <div class="filters-card">
+      <div class="filters-row">
+        <!-- Search Input -->
+        <div class="search-input">
+          <i class="fa-solid fa-magnifying-glass search-input__icon"></i>
+          <input
+            type="text"
+            placeholder="Search by name, employee ID, or phone..."
+            [value]="searchTerm()"
+            (input)="onSearchChange($event)"
+          />
+        </div>
+
+        <!-- Status Filter -->
+        <div class="status-select">
+          <select [value]="selectedStatus()" (change)="onStatusChange($event)">
+            @for (option of statusOptions; track option.value) {
+              <option [value]="option.value">{{ option.label }}</option>
+            }
+          </select>
+          <i class="fa-solid fa-chevron-down status-select__icon"></i>
+        </div>
+
+        <!-- Staff Type Filter -->
+        <div class="status-select">
+          <select [value]="selectedStaffType()" (change)="onStaffTypeChange($event)">
+            @for (option of staffTypeOptions; track option.value) {
+              <option [value]="option.value">{{ option.label }}</option>
+            }
+          </select>
+          <i class="fa-solid fa-chevron-down status-select__icon"></i>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="filter-actions">
+          @if (searchTerm() || selectedStatus() || selectedStaffType()) {
+            <button type="button" class="clear-btn" (click)="clearFilters()">
+              <i class="fa-solid fa-xmark"></i>
+              <span>Clear</span>
+            </button>
+          }
+          <button
+            type="button"
+            class="refresh-btn"
+            [class.spinning]="loading()"
+            title="Refresh"
+            (click)="refresh()"
+          >
+            <i class="fa-solid fa-arrows-rotate"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Active Filters -->
+      @if (searchTerm() || selectedStatus() || selectedStaffType()) {
+        <div class="active-filters">
+          <span class="active-filters__label">Filters:</span>
+          @if (searchTerm()) {
+            <span class="filter-tag filter-tag--search">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              "{{ searchTerm() }}"
+              <button
+                type="button"
+                class="filter-tag__remove"
+                (click)="searchTerm.set(''); loadStaff()"
+              >
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </span>
+          }
+          @if (selectedStatus(); as status) {
+            <span class="filter-tag filter-tag--status">
+              <i class="fa-solid fa-filter"></i>
+              {{ getStatusLabel(status) }}
+              <button
+                type="button"
+                class="filter-tag__remove"
+                (click)="selectedStatus.set(''); loadStaff()"
+              >
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </span>
+          }
+          @if (selectedStaffType(); as type) {
+            <span class="filter-tag filter-tag--status">
+              <i class="fa-solid fa-briefcase"></i>
+              {{ getStaffTypeLabel(type) }}
+              <button
+                type="button"
+                class="filter-tag__remove"
+                (click)="selectedStaffType.set(''); loadStaff()"
+              >
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </span>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Error State -->
+    @if (error()) {
+      <div class="error-card">
+        <div class="error-card__icon">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <div class="error-card__content">
+          <h3>Unable to load staff</h3>
+          <p>{{ error() }}</p>
+        </div>
+        <div class="error-card__action">
+          <button type="button" class="retry-btn" (click)="refresh()">
+            <i class="fa-solid fa-arrows-rotate"></i>
+            Retry
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- Results Count -->
+    @if (!loading() && !isEmpty()) {
+      <p class="results-count">
+        Showing <strong>{{ staffList().length }}</strong> of
+        <strong>{{ totalCount() }}</strong> staff members
+      </p>
+    }
+
+    <!-- Mobile Card View -->
+    <div class="staff-cards">
+      @if (loading() && staffList().length === 0) {
+        @for (i of [1, 2, 3]; track i) {
+          <div class="skeleton-card">
+            <div class="skeleton-card__avatar"></div>
+            <div class="skeleton-card__content">
+              <div class="skeleton-card__title"></div>
+              <div class="skeleton-card__subtitle"></div>
+            </div>
+          </div>
+        }
+      }
+
+      @for (staff of staffList(); track staff.id) {
+        <div
+          class="staff-card"
+          (click)="router.navigate(['/staff', staff.id])"
+        >
+          <!-- Card Header -->
+          <div class="staff-card__header">
+            <span class="staff-card__employee-id">{{ staff.employeeId }}</span>
+            <msls-badge
+              [variant]="getStatusVariant(staff.status)"
+              size="sm"
+              [dot]="true"
+            >
+              {{ getStatusLabel(staff.status) }}
+            </msls-badge>
+          </div>
+
+          <!-- Card Body -->
+          <div class="staff-card__body">
+            <!-- Avatar -->
+            <div class="staff-card__avatar">
+              <msls-avatar
+                [src]="staff.photoUrl || ''"
+                [name]="staff.fullName"
+                size="lg"
+              />
+              @if (staff.status === 'active') {
+                <span class="staff-card__status-dot"></span>
+              }
+            </div>
+
+            <!-- Info -->
+            <div class="staff-card__info">
+              <h3>{{ staff.fullName }}</h3>
+              <div class="staff-card__meta">
+                @if (staff.designationName) {
+                  <span>
+                    <i class="fa-solid fa-briefcase"></i>
+                    {{ staff.designationName }}
+                  </span>
+                }
+                @if (staff.departmentName) {
+                  <span>
+                    <i class="fa-solid fa-building"></i>
+                    {{ staff.departmentName }}
+                  </span>
+                }
+              </div>
+            </div>
+
+            <!-- Arrow -->
+            <div class="staff-card__arrow">
+              <i class="fa-solid fa-chevron-right"></i>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Desktop Table View -->
+    <div class="staff-table-container">
+      <div class="staff-table">
+        @if (loading() && staffList().length === 0) {
+          <div class="staff-table__body">
+            @for (i of [1, 2, 3, 4, 5]; track i) {
+              <div class="skeleton-row">
+                <div style="display: flex; align-items: center; gap: 1rem">
+                  <div class="skeleton-row__avatar"></div>
+                  <div style="flex: 1">
+                    <div class="skeleton-row__text skeleton-row__text--medium"></div>
+                  </div>
+                </div>
+                <div class="skeleton-row__text skeleton-row__text--short"></div>
+                <div class="skeleton-row__text skeleton-row__text--short"></div>
+                <div class="skeleton-row__badge"></div>
+                <div class="skeleton-row__actions">
+                  <span></span>
+                  <span></span>
+                </div>
+              </div>
+            }
+          </div>
+        } @else if (!isEmpty()) {
+          <!-- Table Header -->
+          <div class="staff-table__header">
+            <span>Staff</span>
+            <span>Employee ID</span>
+            <span>Department</span>
+            <span>Type</span>
+            <span>Status</span>
+            <span>Actions</span>
+          </div>
+
+          <!-- Table Body -->
+          <div class="staff-table__body">
+            @for (staff of staffList(); track staff.id) {
+              <div
+                class="staff-table__row"
+                (click)="router.navigate(['/staff', staff.id])"
+              >
+                <!-- Staff Info -->
+                <div class="staff-table__staff">
+                  <div class="staff-table__avatar-wrap">
+                    <msls-avatar
+                      [src]="staff.photoUrl || ''"
+                      [name]="staff.fullName"
+                      size="md"
+                    />
+                    @if (staff.status === 'active') {
+                      <span class="staff-table__status-dot"></span>
+                    }
+                  </div>
+                  <div class="staff-table__details">
+                    <strong>{{ staff.fullName }}</strong>
+                    <span>
+                      @if (staff.designationName) {
+                        {{ staff.designationName }}
+                      } @else {
+                        —
+                      }
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Employee ID -->
+                <div>
+                  <span class="staff-table__employee-id">{{ staff.employeeId }}</span>
+                </div>
+
+                <!-- Department -->
+                <div>
+                  <span class="staff-table__department">{{ staff.departmentName || '—' }}</span>
+                </div>
+
+                <!-- Type -->
+                <div>
+                  <span class="staff-table__type">{{ getStaffTypeLabel(staff.staffType) }}</span>
+                </div>
+
+                <!-- Status -->
+                <div>
+                  <msls-badge
+                    [variant]="getStatusVariant(staff.status)"
+                    [dot]="true"
+                  >
+                    {{ getStatusLabel(staff.status) }}
+                  </msls-badge>
+                </div>
+
+                <!-- Actions -->
+                <div class="staff-table__actions">
+                  <button
+                    type="button"
+                    class="action-btn"
+                    title="View details"
+                    (click)="onViewStaff($event, staff)"
+                  >
+                    <i class="fa-solid fa-eye"></i>
+                  </button>
+                  <button
+                    type="button"
+                    class="action-btn action-btn--edit"
+                    title="Edit staff"
+                    (click)="onEditStaff($event, staff)"
+                  >
+                    <i class="fa-solid fa-pen"></i>
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    @if (!loading() && isEmpty()) {
+      <div class="empty-state">
+        <div class="empty-state__icon">
+          <div class="empty-state__icon-bg"></div>
+          <div class="empty-state__icon-inner">
+            <i class="fa-solid fa-users-gear"></i>
+          </div>
+        </div>
+
+        @if (searchTerm() || selectedStatus() || selectedStaffType()) {
+          <h2>No results found</h2>
+          <p>
+            We couldn't find any staff members matching your search. Try different
+            keywords or clear your filters.
+          </p>
+          <button
+            type="button"
+            class="empty-action-btn empty-action-btn--secondary"
+            (click)="clearFilters()"
+          >
+            <i class="fa-solid fa-xmark"></i>
+            Clear All Filters
+          </button>
+        } @else {
+          <h2>No staff yet</h2>
+          <p>Get started by adding your first staff member to the system.</p>
+          <button
+            type="button"
+            class="empty-action-btn empty-action-btn--primary"
+            (click)="onAddStaff()"
+          >
+            <i class="fa-solid fa-plus"></i>
+            Add Your First Staff Member
+          </button>
+        }
+      </div>
+    }
+
+    <!-- Load More -->
+    @if (hasMore() && !loading()) {
+      <div class="load-more">
+        <button type="button" class="load-more-btn" (click)="loadMore()">
+          <i class="fa-solid fa-arrow-down"></i>
+          Load More Staff
+        </button>
+      </div>
+    }
+
+    <!-- Loading More -->
+    @if (loading() && staffList().length > 0) {
+      <div class="loading-more">
+        <div class="loading-more__spinner"></div>
+        <span>Loading more staff...</span>
+      </div>
+    }
+  </div>
+</div>

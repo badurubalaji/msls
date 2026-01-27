@@ -1,0 +1,318 @@
+# generated: 2026-01-23
+# project: msls
+# project_key: msls
+# tracking_system: file-system
+# story_location: _bmad-output/implementation-artifacts/stories
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog → in-progress: Automatically when first story is created (via create-story)
+#   - in-progress → done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - SM typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+
+generated: 2026-01-23
+project: msls
+project_key: msls
+tracking_system: file-system
+story_location: _bmad-output/implementation-artifacts/stories
+
+development_status:
+  # ═══════════════════════════════════════════════════════════════
+  # PHASE 1 - MVP (15 Epics)
+  # ═══════════════════════════════════════════════════════════════
+
+  # Epic 1: Project Foundation & Design System
+  epic-1: done
+  1-1-backend-project-scaffolding: done
+  1-2-database-foundation-with-multi-tenancy: done
+  1-3-core-backend-infrastructure: done
+  1-4-frontend-project-scaffolding: done
+  1-5-design-system-atomic-components: done
+  1-6-design-system-molecule-components: done
+  1-7-core-http-client-authentication-service: done
+  1-8-application-shell-navigation-layout: done
+  1-9-development-tooling-documentation: done
+  epic-1-retrospective: optional
+
+  # Epic 2: User Authentication & Access Control
+  epic-2: done
+  2-1-user-registration-email-verification: done
+  2-2-user-login-with-email-password: done
+  2-3-jwt-token-refresh-session-management: done
+  2-4-two-factor-authentication-totp: done
+  2-5-role-permission-management: done
+  2-6-user-profile-management: done
+  2-7-parent-student-otp-login: done
+  2-8-feature-flags-configuration-engine: done
+  epic-2-retrospective: optional
+
+  # Epic 3: School Setup & Admissions
+  epic-3: done
+  3-1-branch-configuration: done
+  3-2-academic-year-management: done
+  3-3-admission-session-configuration: done
+  3-4-admission-enquiry-management: done
+  3-5-online-admission-application: done
+  3-6-application-review-entrance-test: done
+  3-7-merit-list-admission-decision: done
+  3-8-admission-reports-analytics: done
+  epic-3-retrospective: optional
+
+  # Epic 4: Student Lifecycle Management
+  epic-4: done
+  4-1-student-profile-creation: done
+  4-2-guardian-information-management: done
+  4-3-student-health-records: done
+  4-4-behavioral-incident-tracking: done
+  4-5-document-management: done
+  4-6-enrollment-history: done
+  4-7-promotion-retention-processing: done
+  4-8-student-search-filters: done
+  epic-4-retrospective: optional
+
+  # Epic 5: Staff Management
+  epic-5: in-progress
+  5-1-staff-profile-management: done
+  5-2-qualifications-experience-tracking: backlog
+  5-3-department-designation-hierarchy: done
+  5-4-staff-attendance-tracking: backlog
+  5-5-salary-structure-configuration: done
+  5-6-payroll-processing: backlog
+  5-7-subject-teacher-assignment: backlog
+  5-8-staff-document-management: backlog
+  epic-5-retrospective: optional
+
+  # Epic 6: Academic Structure & Timetable
+  epic-6: backlog
+  6-1-class-section-management: backlog
+  6-2-subject-configuration: backlog
+  6-3-period-slot-configuration: backlog
+  6-4-timetable-builder: backlog
+  6-5-teacher-timetable-view: backlog
+  6-6-substitution-management: backlog
+  epic-6-retrospective: optional
+
+  # Epic 7: Daily Attendance Operations
+  epic-7: backlog
+  7-1-daily-attendance-marking-interface: backlog
+  7-2-period-wise-attendance: backlog
+  7-3-attendance-edit-history: backlog
+  7-4-student-attendance-calendar-view: backlog
+  7-5-attendance-reports-class-level: backlog
+  7-6-attendance-reports-individual-student: backlog
+  7-7-low-attendance-alerts: backlog
+  7-8-attendance-deadline-enforcement: backlog
+  epic-7-retrospective: optional
+
+  # Epic 8: Examinations & Grading
+  epic-8: backlog
+  8-1-exam-type-configuration: backlog
+  8-2-examination-scheduling: backlog
+  8-3-hall-ticket-generation: backlog
+  8-4-marks-entry: backlog
+  8-5-grading-scale-configuration: backlog
+  8-6-result-calculation: backlog
+  8-7-report-card-generation: backlog
+  8-8-rank-generation: backlog
+  epic-8-retrospective: optional
+
+  # Epic 9: Homework & Assignments
+  epic-9: backlog
+  9-1-assignment-creation: backlog
+  9-2-assignment-file-attachments: backlog
+  9-3-student-submission: backlog
+  9-4-late-submission-handling: backlog
+  9-5-grading-feedback: backlog
+  9-6-assignment-tracking-reports: backlog
+  epic-9-retrospective: optional
+
+  # Epic 10: Leave Management
+  epic-10: backlog
+  10-1-leave-type-configuration: backlog
+  10-2-leave-balance-tracking: backlog
+  10-3-leave-application-workflow: backlog
+  10-4-leave-policy-enforcement: backlog
+  10-5-leave-calendar-reports: backlog
+  10-6-leave-notifications: backlog
+  epic-10-retrospective: optional
+
+  # Epic 11: Fees & Payments
+  epic-11: backlog
+  11-1-fee-category-structure-configuration: backlog
+  11-2-student-fee-assignment: backlog
+  11-3-discount-concession-management: backlog
+  11-4-invoice-generation: backlog
+  11-5-payment-collection-counter: backlog
+  11-6-online-payment-integration: backlog
+  11-7-receipt-generation-management: backlog
+  11-8-late-fee-calculation: backlog
+  11-9-dues-tracking-defaulter-reports: backlog
+  11-10-fee-refund-processing: backlog
+  epic-11-retrospective: optional
+
+  # Epic 12: Communication Hub
+  epic-12: backlog
+  12-1-notice-creation-publishing: backlog
+  12-2-sms-integration: backlog
+  12-3-email-notifications: backlog
+  12-4-push-notifications: backlog
+  12-5-notice-acknowledgement: backlog
+  12-6-parent-teacher-messaging: backlog
+  12-7-automated-event-notifications: backlog
+  epic-12-retrospective: optional
+
+  # Epic 13: Parent Portal
+  epic-13: backlog
+  13-1-parent-registration-login: backlog
+  13-2-parent-dashboard: backlog
+  13-3-attendance-view: backlog
+  13-4-academic-performance-view: backlog
+  13-5-fee-details-online-payment: backlog
+  13-6-homework-grades-view: backlog
+  13-7-notices-circulars: backlog
+  13-8-parent-teacher-messaging: backlog
+  13-9-multi-child-support: backlog
+  epic-13-retrospective: optional
+
+  # Epic 14: Student Portal
+  epic-14: backlog
+  14-1-student-login: backlog
+  14-2-personal-timetable: backlog
+  14-3-attendance-view: backlog
+  14-4-homework-submission: backlog
+  14-5-exam-results-view: backlog
+  14-6-quiz-assignments-view: backlog
+  14-7-library-books-view: backlog
+  epic-14-retrospective: optional
+
+  # Epic 15: Certificate Generation
+  epic-15: backlog
+  15-1-certificate-request: backlog
+  15-2-approval-workflow: backlog
+  15-3-template-based-generation: backlog
+  15-4-qr-code-verification: backlog
+  15-5-delivery-tracking: backlog
+  15-6-duplicate-certificate-handling: backlog
+  epic-15-retrospective: optional
+
+  # ═══════════════════════════════════════════════════════════════
+  # PHASE 2 - Extended Features (7 Epics)
+  # ═══════════════════════════════════════════════════════════════
+
+  # Epic 16: Online Quiz & Assessment
+  epic-16: backlog
+  16-1-question-bank-management: backlog
+  16-2-quiz-creation: backlog
+  16-3-quiz-attempt-interface: backlog
+  16-4-auto-grading: backlog
+  16-5-quiz-analytics: backlog
+  16-6-proctoring-features: backlog
+  16-7-practice-mode: backlog
+  epic-16-retrospective: optional
+
+  # Epic 17: Digital Classroom
+  epic-17: backlog
+  17-1-class-recording: backlog
+  17-2-recording-processing: backlog
+  17-3-bookmark-chapter-markers: backlog
+  17-4-watch-progress-tracking: backlog
+  17-5-content-library: backlog
+  17-6-explained-pdfs: backlog
+  epic-17-retrospective: optional
+
+  # Epic 18: Transport Management
+  epic-18: backlog
+  18-1-vehicle-management: backlog
+  18-2-route-definition: backlog
+  18-3-student-route-assignment: backlog
+  18-4-driver-attendant-management: backlog
+  18-5-gps-tracking: backlog
+  18-6-transport-attendance: backlog
+  18-7-distance-based-fee: backlog
+  epic-18-retrospective: optional
+
+  # Epic 19: Library Management
+  epic-19: backlog
+  19-1-book-catalog: backlog
+  19-2-member-management: backlog
+  19-3-issue-return-processing: backlog
+  19-4-reservation-waitlist: backlog
+  19-5-fine-calculation: backlog
+  19-6-circulation-reports: backlog
+  epic-19-retrospective: optional
+
+  # Epic 20: Inventory & Assets
+  epic-20: backlog
+  20-1-asset-registration: backlog
+  20-2-asset-location-management: backlog
+  20-3-asset-depreciation: backlog
+  20-4-maintenance-request: backlog
+  20-5-maintenance-processing: backlog
+  20-6-stock-consumable-management: backlog
+  20-7-purchase-order-management: backlog
+  20-8-vendor-management: backlog
+  epic-20-retrospective: optional
+
+  # Epic 21: Visitor & Gate Management
+  epic-21: backlog
+  21-1-visitor-registration: backlog
+  21-2-visitor-badge-printing: backlog
+  21-3-visitor-checkout: backlog
+  21-4-student-gate-pass-request: backlog
+  21-5-gate-pass-approval: backlog
+  21-6-vehicle-entry-logging: backlog
+  21-7-visitor-pre-registration: backlog
+  21-8-security-dashboard: backlog
+  epic-21-retrospective: optional
+
+  # Epic 22: Analytics & Dashboards
+  epic-22: backlog
+  22-1-principal-dashboard: backlog
+  22-2-teacher-dashboard: backlog
+  22-3-academic-analytics: backlog
+  22-4-financial-analytics: backlog
+  22-5-attendance-analytics: backlog
+  22-6-custom-report-builder: backlog
+  22-7-report-scheduling: backlog
+  22-8-data-visualization-widgets: backlog
+  epic-22-retrospective: optional
+
+  # ═══════════════════════════════════════════════════════════════
+  # PHASE 3 - Advanced Features (1 Epic)
+  # ═══════════════════════════════════════════════════════════════
+
+  # Epic 23: AI-Powered Insights
+  epic-23: backlog
+  23-1-student-performance-risk-prediction: backlog
+  23-2-dropout-risk-identification: backlog
+  23-3-personalized-learning-recommendations: backlog
+  23-4-fee-default-prediction: backlog
+  23-5-admission-demand-forecasting: backlog
+  23-6-class-recording-auto-summarization: backlog
+  23-7-quiz-question-auto-generation: backlog
+  23-8-anomaly-detection: backlog
+  23-9-ai-configuration-privacy: backlog
+  epic-23-retrospective: optional

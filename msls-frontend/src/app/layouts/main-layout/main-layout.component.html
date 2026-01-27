@@ -1,0 +1,16 @@
+<!-- Main Layout Container -->
+<div [class]="layoutClasses()">
+  <!-- Sidebar -->
+  <msls-sidebar />
+
+  <!-- Main Content Area -->
+  <div class="main-layout__content">
+    <!-- Header -->
+    <msls-header />
+
+    <!-- Page Content -->
+    <main class="main-layout__main">
+      <router-outlet />
+    </main>
+  </div>
+</div>

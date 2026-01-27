@@ -1,0 +1,61 @@
+<!-- Mobile Overlay Backdrop -->
+<div
+  class="sidebar-backdrop"
+  [class.sidebar-backdrop--visible]="isOpen()"
+  (click)="closeMobile()"
+  aria-hidden="true"
+></div>
+
+<!-- Sidebar Container -->
+<aside
+  [class]="sidebarClasses()"
+  role="navigation"
+  aria-label="Main navigation"
+>
+  <!-- Sidebar Header / Logo with Collapse Toggle -->
+  <div class="sidebar__header">
+    @if (!isCollapsed()) {
+      <div class="sidebar__logo">
+        <span class="sidebar__logo-icon">
+          <i class="fa-solid fa-graduation-cap"></i>
+        </span>
+        <span class="sidebar__logo-text">MSLS</span>
+      </div>
+      <!-- Collapse Toggle Button (in header when expanded) -->
+      <button
+        type="button"
+        class="sidebar__toggle-btn"
+        (click)="toggleCollapse()"
+        aria-label="Collapse sidebar"
+        title="Collapse sidebar"
+      >
+        <i class="fa-solid fa-angles-left"></i>
+      </button>
+    } @else {
+      <!-- Expand Toggle Button (in header when collapsed) -->
+      <button
+        type="button"
+        class="sidebar__toggle-btn sidebar__toggle-btn--collapsed"
+        (click)="toggleCollapse()"
+        aria-label="Expand sidebar"
+        title="Expand sidebar"
+      >
+        <i class="fa-solid fa-angles-right"></i>
+      </button>
+    }
+  </div>
+
+  <!-- Navigation Items -->
+  <nav class="sidebar__nav">
+    <ul class="sidebar__nav-list" role="list">
+      @for (item of navItems(); track item.label) {
+        <li>
+          <msls-nav-item
+            [item]="item"
+            [collapsed]="isCollapsed()"
+          />
+        </li>
+      }
+    </ul>
+  </nav>
+</aside>

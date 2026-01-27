@@ -1,0 +1,558 @@
+<!-- Student List Page -->
+<div class="student-list-page">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-content">
+      <div class="header-left">
+        <div class="header-icon">
+          <i class="fa-solid fa-user-graduate"></i>
+        </div>
+        <div class="header-text">
+          <h1>Students</h1>
+          <p>Manage and track student records</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button type="button" class="promotion-btn" (click)="router.navigate(['/students/promotion'])">
+          <i class="fa-solid fa-arrow-up-right-dots"></i>
+          <span>Promotion</span>
+        </button>
+        <button type="button" class="add-student-btn" (click)="onAddStudent()">
+          <i class="fa-solid fa-plus"></i>
+          <span>Add Student</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <!-- Stats Grid -->
+    <div class="stats-grid">
+      <!-- Total Students -->
+      <div class="stat-card stat-card--total">
+        <div class="stat-card__header">
+          <div>
+            <p class="stat-card__value">{{ totalCount() }}</p>
+            <p class="stat-card__label">Total Students</p>
+          </div>
+          <div class="stat-card__icon">
+            <i class="fa-solid fa-users"></i>
+          </div>
+        </div>
+        <div class="stat-card__footer">All registered students</div>
+      </div>
+
+      <!-- Active Students -->
+      <div class="stat-card stat-card--active">
+        <div class="stat-card__header">
+          <div>
+            <p class="stat-card__value">{{ getActiveCount() }}</p>
+            <p class="stat-card__label">Active</p>
+          </div>
+          <div class="stat-card__icon">
+            <i class="fa-solid fa-user-check"></i>
+          </div>
+        </div>
+        <div class="stat-card__footer">
+          <div class="active-indicator">
+            <span class="active-indicator__dot"></span>
+            <span class="active-indicator__text">Currently enrolled</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- New This Month -->
+      <div class="stat-card stat-card--new">
+        <div class="stat-card__header">
+          <div>
+            <p class="stat-card__value">{{ getNewThisMonth() }}</p>
+            <p class="stat-card__label">New This Month</p>
+          </div>
+          <div class="stat-card__icon">
+            <i class="fa-solid fa-user-plus"></i>
+          </div>
+        </div>
+        <div class="stat-card__footer">Recent admissions</div>
+      </div>
+
+      <!-- Graduated -->
+      <div class="stat-card stat-card--graduated">
+        <div class="stat-card__header">
+          <div>
+            <p class="stat-card__value">{{ getGraduatedCount() }}</p>
+            <p class="stat-card__label">Graduated</p>
+          </div>
+          <div class="stat-card__icon">
+            <i class="fa-solid fa-graduation-cap"></i>
+          </div>
+        </div>
+        <div class="stat-card__footer">Completed studies</div>
+      </div>
+    </div>
+
+    <!-- Search & Filters Card -->
+    <div class="filters-card">
+      <div class="filters-row">
+        <!-- Search Component -->
+        <msls-student-search
+          [filters]="currentFilters()"
+          (searchChanged)="onSearchChange($event)"
+          (filtersToggled)="onFiltersToggle()"
+        />
+
+        <!-- Action Buttons -->
+        <div class="filter-actions">
+          @if (searchTerm() || selectedStatus() || selectedBranch()) {
+            <button type="button" class="clear-btn" (click)="clearFilters()">
+              <i class="fa-solid fa-xmark"></i>
+              <span>Clear</span>
+            </button>
+          }
+          <button
+            type="button"
+            class="refresh-btn"
+            [class.spinning]="loading()"
+            title="Refresh"
+            (click)="refresh()"
+          >
+            <i class="fa-solid fa-arrows-rotate"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Advanced Filters Panel -->
+      @if (showFilters()) {
+        <msls-student-filters
+          [filters]="currentFilters()"
+          (filtersChanged)="onAdvancedFiltersChange($event)"
+        />
+      }
+
+      <!-- Active Filters -->
+      @if (searchTerm() || selectedStatus() || currentFilters().gender || currentFilters().admissionFrom) {
+        <div class="active-filters">
+          <span class="active-filters__label">Filters:</span>
+          @if (searchTerm()) {
+            <span class="filter-tag filter-tag--search">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              "{{ searchTerm() }}"
+              <button
+                type="button"
+                class="filter-tag__remove"
+                (click)="onSearchChange('')"
+              >
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </span>
+          }
+          @if (selectedStatus(); as status) {
+            <span class="filter-tag filter-tag--status">
+              <i class="fa-solid fa-filter"></i>
+              {{ getStatusLabel(status) }}
+              <button
+                type="button"
+                class="filter-tag__remove"
+                (click)="onStatusChange('')"
+              >
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </span>
+          }
+          @if (currentFilters().gender; as gender) {
+            <span class="filter-tag filter-tag--status">
+              <i class="fa-solid fa-venus-mars"></i>
+              {{ gender | titlecase }}
+              <button
+                type="button"
+                class="filter-tag__remove"
+                (click)="onAdvancedFiltersChange({ gender: undefined })"
+              >
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </span>
+          }
+          @if (currentFilters().admissionFrom || currentFilters().admissionTo) {
+            <span class="filter-tag filter-tag--status">
+              <i class="fa-solid fa-calendar"></i>
+              @if (currentFilters().admissionFrom && currentFilters().admissionTo) {
+                {{ currentFilters().admissionFrom }} - {{ currentFilters().admissionTo }}
+              } @else if (currentFilters().admissionFrom) {
+                From {{ currentFilters().admissionFrom }}
+              } @else {
+                Until {{ currentFilters().admissionTo }}
+              }
+              <button
+                type="button"
+                class="filter-tag__remove"
+                (click)="onAdvancedFiltersChange({ admissionFrom: undefined, admissionTo: undefined })"
+              >
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </span>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Error State -->
+    @if (error()) {
+      <div class="error-card">
+        <div class="error-card__icon">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <div class="error-card__content">
+          <h3>Unable to load students</h3>
+          <p>{{ error() }}</p>
+        </div>
+        <div class="error-card__action">
+          <button type="button" class="retry-btn" (click)="refresh()">
+            <i class="fa-solid fa-arrows-rotate"></i>
+            Retry
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- Results Count -->
+    @if (!loading() && !isEmpty()) {
+      <p class="results-count">
+        Showing <strong>{{ students().length }}</strong> of
+        <strong>{{ totalCount() }}</strong> students
+      </p>
+    }
+
+    <!-- Mobile Card View -->
+    <div class="student-cards">
+      @if (loading() && students().length === 0) {
+        @for (i of [1, 2, 3]; track i) {
+          <div class="skeleton-card">
+            <div class="skeleton-card__avatar"></div>
+            <div class="skeleton-card__content">
+              <div class="skeleton-card__title"></div>
+              <div class="skeleton-card__subtitle"></div>
+            </div>
+          </div>
+        }
+      }
+
+      @for (student of students(); track student.id) {
+        <div
+          class="student-card"
+          [class.selected]="isSelected(student.id)"
+          (click)="router.navigate(['/students', student.id])"
+        >
+          <!-- Card Header -->
+          <div class="student-card__header">
+            <label class="select-cell" (click)="$event.stopPropagation()">
+              <input
+                type="checkbox"
+                [checked]="isSelected(student.id)"
+                (change)="toggleSelectStudent($event, student.id)"
+              />
+            </label>
+            <span class="student-card__admission">{{
+              student.admissionNumber
+            }}</span>
+            <msls-badge
+              [variant]="getStatusVariant(student.status)"
+              size="sm"
+              [dot]="true"
+            >
+              {{ getStatusLabel(student.status) }}
+            </msls-badge>
+          </div>
+
+          <!-- Card Body -->
+          <div class="student-card__body">
+            <!-- Avatar -->
+            <div class="student-card__avatar">
+              <msls-avatar
+                [src]="student.photoUrl || ''"
+                [name]="student.fullName"
+                size="lg"
+              />
+              @if (student.status === 'active') {
+                <span class="student-card__status-dot"></span>
+              }
+            </div>
+
+            <!-- Info -->
+            <div class="student-card__info">
+              <h3>{{ student.fullName }}</h3>
+              <div class="student-card__meta">
+                @if (student.className) {
+                  <span>
+                    <i class="fa-solid fa-chalkboard"></i>
+                    {{ formatClassSection(student) }}
+                  </span>
+                }
+                @if (student.gender) {
+                  <span>
+                    <i class="fa-solid fa-user"></i>
+                    {{ student.gender | titlecase }}
+                  </span>
+                }
+              </div>
+            </div>
+
+            <!-- Arrow -->
+            <div class="student-card__arrow">
+              <i class="fa-solid fa-chevron-right"></i>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Desktop Table View -->
+    <div class="student-table-container">
+      <div class="student-table">
+        @if (loading() && students().length === 0) {
+          <div class="student-table__body">
+            @for (i of [1, 2, 3, 4, 5]; track i) {
+              <div class="skeleton-row">
+                <div style="display: flex; align-items: center; gap: 1rem">
+                  <div class="skeleton-row__avatar"></div>
+                  <div style="flex: 1">
+                    <div class="skeleton-row__text skeleton-row__text--medium"></div>
+                  </div>
+                </div>
+                <div class="skeleton-row__text skeleton-row__text--short"></div>
+                <div class="skeleton-row__text skeleton-row__text--short"></div>
+                <div class="skeleton-row__badge"></div>
+                <div class="skeleton-row__actions">
+                  <span></span>
+                  <span></span>
+                </div>
+              </div>
+            }
+          </div>
+        } @else if (!isEmpty()) {
+          <!-- Table Header -->
+          <div class="student-table__header">
+            <label class="select-cell">
+              <input
+                type="checkbox"
+                [checked]="allSelected()"
+                (change)="toggleSelectAll()"
+              />
+            </label>
+            <span>Student</span>
+            <span>Admission No</span>
+            <span>Class</span>
+            <span>Status</span>
+            <span>Actions</span>
+          </div>
+
+          <!-- Table Body -->
+          <div class="student-table__body">
+            @for (student of students(); track student.id) {
+              <div
+                class="student-table__row"
+                [class.selected]="isSelected(student.id)"
+                (click)="router.navigate(['/students', student.id])"
+              >
+                <!-- Selection Checkbox -->
+                <label class="select-cell" (click)="$event.stopPropagation()">
+                  <input
+                    type="checkbox"
+                    [checked]="isSelected(student.id)"
+                    (change)="toggleSelectStudent($event, student.id)"
+                  />
+                </label>
+                <!-- Student Info -->
+                <div class="student-table__student">
+                  <div class="student-table__avatar-wrap">
+                    <msls-avatar
+                      [src]="student.photoUrl || ''"
+                      [name]="student.fullName"
+                      size="md"
+                    />
+                    @if (student.status === 'active') {
+                      <span class="student-table__status-dot"></span>
+                    }
+                  </div>
+                  <div class="student-table__details">
+                    <strong>{{ student.fullName }}</strong>
+                    <span>
+                      <i class="fa-solid fa-user"></i>
+                      {{ student.gender | titlecase }}
+                      @if (student.dateOfBirth) {
+                        <span style="color: #cbd5e1; margin: 0 0.25rem">|</span>
+                        {{ student.dateOfBirth | date : 'mediumDate' }}
+                      }
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Admission Number -->
+                <div>
+                  <span class="student-table__admission">{{
+                    student.admissionNumber
+                  }}</span>
+                </div>
+
+                <!-- Class -->
+                <div>
+                  <span class="student-table__class">{{
+                    formatClassSection(student)
+                  }}</span>
+                </div>
+
+                <!-- Status -->
+                <div>
+                  <msls-badge
+                    [variant]="getStatusVariant(student.status)"
+                    [dot]="true"
+                  >
+                    {{ getStatusLabel(student.status) }}
+                  </msls-badge>
+                </div>
+
+                <!-- Actions -->
+                <div class="student-table__actions">
+                  <button
+                    type="button"
+                    class="action-btn"
+                    title="View details"
+                    (click)="onViewStudent($event, student)"
+                  >
+                    <i class="fa-solid fa-eye"></i>
+                  </button>
+                  <button
+                    type="button"
+                    class="action-btn action-btn--edit"
+                    title="Edit student"
+                    (click)="onEditStudent($event, student)"
+                  >
+                    <i class="fa-solid fa-pen"></i>
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    @if (!loading() && isEmpty()) {
+      <div class="empty-state">
+        <div class="empty-state__icon">
+          <div class="empty-state__icon-bg"></div>
+          <div class="empty-state__icon-inner">
+            <i class="fa-solid fa-user-graduate"></i>
+          </div>
+        </div>
+
+        @if (searchTerm() || selectedStatus()) {
+          <h2>No results found</h2>
+          <p>
+            We couldn't find any students matching your search. Try different
+            keywords or clear your filters.
+          </p>
+          <button
+            type="button"
+            class="empty-action-btn empty-action-btn--secondary"
+            (click)="clearFilters()"
+          >
+            <i class="fa-solid fa-xmark"></i>
+            Clear All Filters
+          </button>
+        } @else {
+          <h2>No students yet</h2>
+          <p>Get started by adding your first student to the system.</p>
+          <button
+            type="button"
+            class="empty-action-btn empty-action-btn--primary"
+            (click)="onAddStudent()"
+          >
+            <i class="fa-solid fa-plus"></i>
+            Add Your First Student
+          </button>
+        }
+      </div>
+    }
+
+    <!-- Load More -->
+    @if (hasMore() && !loading()) {
+      <div class="load-more">
+        <button type="button" class="load-more-btn" (click)="loadMore()">
+          <i class="fa-solid fa-arrow-down"></i>
+          Load More Students
+        </button>
+      </div>
+    }
+
+    <!-- Loading More -->
+    @if (loading() && students().length > 0) {
+      <div class="loading-more">
+        <div class="loading-more__spinner"></div>
+        <span>Loading more students...</span>
+      </div>
+    }
+  </div>
+
+  <!-- Bulk Actions Bar -->
+  <msls-bulk-actions
+    [selectedCount]="selectedIds().size"
+    [selectedIds]="selectedIdsArray()"
+    (action)="onBulkAction($event)"
+    (cleared)="clearSelection()"
+  />
+
+  <!-- Export Dialog -->
+  <msls-export-dialog
+    [isOpen]="showExportDialog()"
+    [studentIds]="selectedIdsArray()"
+    (exported)="onExport($event)"
+    (cancelled)="onExportCancel()"
+  />
+
+  <!-- Status Update Dialog -->
+  @if (showStatusDialog()) {
+    <div class="modal-overlay" (click)="onStatusDialogCancel()">
+      <div class="status-modal" (click)="$event.stopPropagation()">
+        <div class="status-modal__header">
+          <h3>Update Status</h3>
+          <button type="button" class="modal__close" (click)="onStatusDialogCancel()">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div class="status-modal__body">
+          <p>Update status for <strong>{{ selectedIds().size }}</strong> students</p>
+          <div class="form-group">
+            <label>New Status</label>
+            <select
+              [ngModel]="bulkStatus()"
+              (ngModelChange)="bulkStatus.set($event)"
+              class="status-select-modal"
+            >
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+              <option value="transferred">Transferred</option>
+              <option value="graduated">Graduated</option>
+            </select>
+          </div>
+        </div>
+        <div class="status-modal__footer">
+          <button type="button" class="btn-secondary" (click)="onStatusDialogCancel()">
+            Cancel
+          </button>
+          <button
+            type="button"
+            class="btn-primary"
+            (click)="onBulkStatusUpdate()"
+            [disabled]="loading()"
+          >
+            @if (loading()) {
+              <i class="fa-solid fa-spinner fa-spin"></i>
+            }
+            Update Status
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

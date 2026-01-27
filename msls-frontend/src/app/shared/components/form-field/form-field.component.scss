@@ -1,0 +1,56 @@
+.form-field {
+  margin-bottom: 1rem;
+
+  &__label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-secondary-700);
+    margin-bottom: 0.25rem;
+  }
+
+  &__required {
+    color: var(--color-danger-500);
+    margin-left: 0.125rem;
+  }
+
+  &__input {
+    position: relative;
+
+    &--error {
+      :host ::ng-deep {
+        input,
+        textarea,
+        select {
+          border-color: var(--color-danger-500) !important;
+
+          &:focus {
+            border-color: var(--color-danger-500) !important;
+            box-shadow: 0 0 0 1px var(--color-danger-500) !important;
+          }
+        }
+      }
+    }
+  }
+
+  &__error {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+    color: var(--color-danger-600);
+  }
+
+  &__error-icon {
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+  }
+
+  &__hint {
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+    color: var(--color-secondary-500);
+  }
+}

@@ -1,0 +1,347 @@
+<!-- Student Detail Page -->
+<div class="student-detail-page">
+  <!-- Loading State -->
+  @if (loading()) {
+    <div class="loading-container">
+      <msls-spinner size="lg" />
+    </div>
+  } @else if (student(); as s) {
+    <!-- Hero Header -->
+    <div class="page-header">
+      <div class="header-content">
+        <div class="header-left">
+          <button
+            type="button"
+            class="back-button"
+            (click)="goBack()"
+            title="Back to students"
+          >
+            <i class="fa-solid fa-arrow-left"></i>
+          </button>
+
+          <div class="header-avatar">
+            <msls-avatar
+              [src]="s.photoUrl || ''"
+              [name]="s.fullName"
+              size="xl"
+            />
+          </div>
+
+          <div class="header-info">
+            <h1>
+              {{ s.fullName }}
+              <msls-badge [variant]="statusVariant()" [dot]="true">
+                {{ statusLabel() }}
+              </msls-badge>
+            </h1>
+            <div class="admission-number">
+              <i class="fa-solid fa-id-card"></i>
+              <code>{{ s.admissionNumber }}</code>
+            </div>
+            @if (s.branchName) {
+              <div class="branch-name">
+                <i class="fa-solid fa-building"></i>
+                {{ s.branchName }}
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <button type="button" class="header-btn header-btn--outline" (click)="onViewAuditLog()">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+            History
+          </button>
+          <button type="button" class="header-btn header-btn--primary" (click)="onEdit()">
+            <i class="fa-solid fa-pen-to-square"></i>
+            Edit
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <!-- Quick Actions -->
+      <div class="quick-actions-card">
+        <div class="quick-actions">
+          <button type="button" class="quick-action-btn quick-action-btn--attendance" (click)="onViewAttendance()">
+            <i class="fa-solid fa-calendar-check"></i>
+            View Attendance
+          </button>
+          <button type="button" class="quick-action-btn quick-action-btn--fees" (click)="onViewFees()">
+            <i class="fa-solid fa-indian-rupee-sign"></i>
+            View Fees
+          </button>
+          <button type="button" class="quick-action-btn quick-action-btn--documents" (click)="onViewDocuments()">
+            <i class="fa-solid fa-folder-open"></i>
+            View Documents
+          </button>
+        </div>
+      </div>
+
+      <!-- Personal Information -->
+      <div class="detail-card">
+        <div class="detail-card__header">
+          <div class="detail-card__icon detail-card__icon--personal">
+            <i class="fa-solid fa-user"></i>
+          </div>
+          <h2 class="detail-card__title">Personal Information</h2>
+        </div>
+        <div class="detail-card__body">
+          <div class="info-grid">
+            <div class="info-item">
+              <div class="info-item__label">Full Name</div>
+              <div class="info-item__value">{{ s.fullName }}</div>
+            </div>
+
+            <div class="info-item">
+              <div class="info-item__label">Date of Birth</div>
+              <div class="info-item__value">
+                {{ formatDate(s.dateOfBirth) }}
+                <span class="info-item__secondary">({{ age() }} years)</span>
+              </div>
+            </div>
+
+            <div class="info-item">
+              <div class="info-item__label">Gender</div>
+              <div class="info-item__value">{{ genderLabel() }}</div>
+            </div>
+
+            <div class="info-item">
+              <div class="info-item__label">Blood Group</div>
+              <div class="info-item__value" [class.info-item__value--muted]="!s.bloodGroup">
+                {{ s.bloodGroup || 'Not specified' }}
+              </div>
+            </div>
+
+            <div class="info-item">
+              <div class="info-item__label">Aadhaar Number</div>
+              <div class="info-item__value info-item__value--mono" [class.info-item__value--muted]="!s.aadhaarNumber">
+                {{ s.aadhaarNumber || 'Not provided' }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Academic Information -->
+      <div class="detail-card">
+        <div class="detail-card__header">
+          <div class="detail-card__icon detail-card__icon--academic">
+            <i class="fa-solid fa-graduation-cap"></i>
+          </div>
+          <h2 class="detail-card__title">Academic Information</h2>
+        </div>
+        <div class="detail-card__body">
+          <div class="info-grid">
+            <div class="info-item">
+              <div class="info-item__label">Admission Number</div>
+              <div class="info-item__value info-item__value--mono">{{ s.admissionNumber }}</div>
+            </div>
+
+            <div class="info-item">
+              <div class="info-item__label">Admission Date</div>
+              <div class="info-item__value">{{ formatDate(s.admissionDate) }}</div>
+            </div>
+
+            <div class="info-item">
+              <div class="info-item__label">Branch</div>
+              <div class="info-item__value" [class.info-item__value--muted]="!s.branchName">
+                {{ s.branchName || 'Not assigned' }}
+              </div>
+            </div>
+
+            <div class="info-item">
+              <div class="info-item__label">Class</div>
+              <div class="info-item__value" [class.info-item__value--muted]="!s.className">
+                {{ s.className || 'Not enrolled' }}
+              </div>
+            </div>
+
+            <div class="info-item">
+              <div class="info-item__label">Section</div>
+              <div class="info-item__value" [class.info-item__value--muted]="!s.sectionName">
+                {{ s.sectionName || 'Not assigned' }}
+              </div>
+            </div>
+
+            <div class="info-item">
+              <div class="info-item__label">Status</div>
+              <div class="info-item__value">
+                <msls-badge [variant]="statusVariant()" size="sm">
+                  {{ statusLabel() }}
+                </msls-badge>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Enrollment History -->
+      <div class="detail-card">
+        <div class="detail-card__header">
+          <div class="detail-card__icon detail-card__icon--enrollment">
+            <i class="fa-solid fa-clipboard-list"></i>
+          </div>
+          <h2 class="detail-card__title">Enrollment History</h2>
+        </div>
+        <div class="detail-card__body">
+          <app-enrollment-history
+            [studentId]="studentId()"
+            [showActions]="true"
+            [canCreate]="true"
+            (create)="onCreateEnrollment()"
+            (edit)="onEditEnrollment($event)"
+            (transfer)="onTransferEnrollment($event)"
+            (dropout)="onDropoutEnrollment($event)"
+          />
+        </div>
+      </div>
+
+      <!-- Address Information -->
+      <div class="detail-card">
+        <div class="detail-card__header">
+          <div class="detail-card__icon detail-card__icon--address">
+            <i class="fa-solid fa-location-dot"></i>
+          </div>
+          <h2 class="detail-card__title">Address Information</h2>
+        </div>
+        <div class="detail-card__body">
+          <div class="address-grid">
+            <!-- Current Address -->
+            <div class="address-card">
+              <div class="address-card__label">
+                <i class="fa-solid fa-house"></i>
+                Current Address
+              </div>
+              @if (s.currentAddress) {
+                <div class="address-card__content">
+                  <p>{{ s.currentAddress.addressLine1 }}</p>
+                  @if (s.currentAddress.addressLine2) {
+                    <p>{{ s.currentAddress.addressLine2 }}</p>
+                  }
+                  <p>{{ s.currentAddress.city }}, {{ s.currentAddress.state }} - {{ s.currentAddress.postalCode }}</p>
+                  <p>{{ s.currentAddress.country }}</p>
+                </div>
+              } @else {
+                <p class="address-card__empty">No address provided</p>
+              }
+            </div>
+
+            <!-- Permanent Address -->
+            <div class="address-card">
+              <div class="address-card__label">
+                <i class="fa-solid fa-building"></i>
+                Permanent Address
+              </div>
+              @if (s.permanentAddress) {
+                <div class="address-card__content">
+                  <p>{{ s.permanentAddress.addressLine1 }}</p>
+                  @if (s.permanentAddress.addressLine2) {
+                    <p>{{ s.permanentAddress.addressLine2 }}</p>
+                  }
+                  <p>{{ s.permanentAddress.city }}, {{ s.permanentAddress.state }} - {{ s.permanentAddress.postalCode }}</p>
+                  <p>{{ s.permanentAddress.country }}</p>
+                </div>
+              } @else {
+                <p class="address-card__empty">Same as current address</p>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Guardian & Emergency Contacts -->
+      <msls-guardian-section [studentId]="studentId()" />
+
+      <!-- Health Records -->
+      <msls-health-section [studentId]="studentId()" />
+
+      <!-- Behavioral Records -->
+      <msls-behavior-section [studentId]="studentId()" />
+
+      <!-- Documents -->
+      <msls-document-section [studentId]="studentId()" />
+
+      <!-- Danger Zone -->
+      <div class="detail-card detail-card--danger">
+        <div class="detail-card__header">
+          <div class="detail-card__icon detail-card__icon--danger">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+          </div>
+          <h2 class="detail-card__title">Danger Zone</h2>
+        </div>
+        <div class="detail-card__body">
+          <div class="danger-zone">
+            <div class="danger-zone__info">
+              <p class="title">Delete this student</p>
+              <p class="description">Once deleted, this student's data cannot be recovered.</p>
+            </div>
+            <button type="button" class="btn-danger" (click)="onDelete()">
+              <i class="fa-solid fa-trash"></i>
+              Delete Student
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Enrollment Form Modal -->
+    @if (showEnrollmentForm()) {
+      <div class="modal-overlay">
+        <div class="modal-container modal-container--md">
+          <div class="modal-header">
+            <h3 class="modal-title">
+              {{ editingEnrollment() ? 'Edit Enrollment' : 'New Enrollment' }}
+            </h3>
+            <button
+              type="button"
+              class="modal-close"
+              (click)="onEnrollmentFormCancelled()"
+            >
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+          <div class="modal-body">
+            <app-enrollment-form
+              [studentId]="studentId()"
+              [enrollment]="editingEnrollment()"
+              [academicYears]="academicYears()"
+              (saved)="onEnrollmentSaved($event)"
+              (cancelled)="onEnrollmentFormCancelled()"
+            />
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Transfer/Dropout Modal -->
+    @if (showTransferModal() && transferEnrollment()) {
+      <app-transfer-form
+        [studentId]="studentId()"
+        [enrollment]="transferEnrollment()!"
+        [mode]="transferMode()"
+        (saved)="onTransferSaved($event)"
+        (cancelled)="onTransferCancelled()"
+      />
+    }
+  } @else {
+    <!-- Error State -->
+    <div class="main-content" style="margin-top: 2rem;">
+      <div class="error-container">
+        <div class="error-container__icon">
+          <i class="fa-solid fa-circle-exclamation"></i>
+        </div>
+        <h2 class="error-container__title">Student Not Found</h2>
+        <p class="error-container__text">
+          The student you're looking for doesn't exist or has been deleted.
+        </p>
+        <button type="button" class="btn-primary" (click)="goBack()">
+          <i class="fa-solid fa-arrow-left"></i>
+          Back to Students
+        </button>
+      </div>
+    </div>
+  }
+</div>

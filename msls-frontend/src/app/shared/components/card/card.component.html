@@ -1,0 +1,19 @@
+<!-- Card Container -->
+<div [class]="cardClasses()">
+  <!-- Card Header (optional) -->
+  <div class="card__header">
+    <ng-content select="[card-header]"></ng-content>
+  </div>
+
+  <!-- Card Body -->
+  <div class="card__body">
+    <ng-content select="[card-body]"></ng-content>
+    <!-- Default content projection for cards without explicit sections -->
+    <ng-content></ng-content>
+  </div>
+
+  <!-- Card Footer (optional) -->
+  <div class="card__footer">
+    <ng-content select="[card-footer]"></ng-content>
+  </div>
+</div>

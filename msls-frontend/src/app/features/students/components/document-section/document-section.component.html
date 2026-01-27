@@ -1,0 +1,330 @@
+<!-- Document Section -->
+<div class="document-section">
+  <!-- Document Card -->
+  <div class="detail-card">
+    <div class="detail-card__header">
+      <div class="detail-card__icon detail-card__icon--documents">
+        <i class="fa-solid fa-folder-open"></i>
+      </div>
+      <h2 class="detail-card__title">Documents</h2>
+    </div>
+
+    <div class="detail-card__body">
+      @if (loading()) {
+        <div class="loading-state">
+          <msls-spinner size="md" />
+        </div>
+      } @else {
+        <!-- Completion Summary -->
+        @if (checklist(); as c) {
+          <div class="completion-summary">
+            <div class="completion-bar">
+              <div class="completion-bar__fill" [style.width.%]="c.completionPercent"></div>
+            </div>
+            <div class="completion-stats">
+              <span class="stat">
+                <i class="fa-solid fa-check-circle text-success"></i>
+                {{ c.totalVerified }} verified
+              </span>
+              <span class="stat">
+                <i class="fa-solid fa-clock text-warning"></i>
+                {{ c.totalPending }} pending
+              </span>
+              <span class="stat">
+                <i class="fa-solid fa-times-circle text-danger"></i>
+                {{ c.totalRejected }} rejected
+              </span>
+              <span class="stat">
+                <i class="fa-solid fa-upload text-info"></i>
+                {{ c.totalUploaded }}/{{ c.items.length }} uploaded
+              </span>
+            </div>
+          </div>
+
+          <!-- Document Checklist -->
+          <div class="checklist">
+            @for (item of c.items; track item.documentType.id) {
+              <div class="checklist-item" [class]="getStatusClass(item)">
+                <div class="checklist-item__status">
+                  <i class="fa-solid" [ngClass]="getStatusIcon(item)"></i>
+                </div>
+
+                <div class="checklist-item__info">
+                  <div class="checklist-item__name">
+                    {{ item.documentType.name }}
+                    @if (item.isRequired) {
+                      <span class="required-badge">Required</span>
+                    }
+                  </div>
+
+                  @if (item.document) {
+                    <div class="checklist-item__meta">
+                      <span class="meta-item">
+                        <i class="fa-solid" [ngClass]="getIcon(item.document.mimeType)"></i>
+                        {{ item.document.fileName }}
+                      </span>
+                      <span class="meta-item">
+                        {{ formatSize(item.document.fileSizeBytes) }}
+                      </span>
+                      <msls-badge [variant]="getStatusBadgeVariant(item.document.status)" size="sm">
+                        {{ getStatusLabel(item.document.status) }}
+                      </msls-badge>
+                    </div>
+
+                    @if (item.document.documentNumber) {
+                      <div class="checklist-item__detail">
+                        Document #: {{ item.document.documentNumber }}
+                      </div>
+                    }
+
+                    @if (item.document.status === 'rejected' && item.document.rejectionReason) {
+                      <div class="checklist-item__rejection">
+                        <i class="fa-solid fa-exclamation-triangle"></i>
+                        {{ item.document.rejectionReason }}
+                      </div>
+                    }
+                  } @else {
+                    <div class="checklist-item__meta checklist-item__meta--missing">
+                      <span>Not uploaded</span>
+                    </div>
+                  }
+                </div>
+
+                <div class="checklist-item__actions">
+                  @if (item.document) {
+                    <button type="button" class="action-btn" (click)="openPreview(item.document)" title="View">
+                      <i class="fa-solid fa-eye"></i>
+                    </button>
+                    <button type="button" class="action-btn" (click)="downloadDocument(item.document)" title="Download">
+                      <i class="fa-solid fa-download"></i>
+                    </button>
+                    @if (item.document.status === 'pending_verification') {
+                      <button type="button" class="action-btn action-btn--success" (click)="openVerifyModal(item.document)" title="Verify">
+                        <i class="fa-solid fa-check"></i>
+                      </button>
+                      <button type="button" class="action-btn action-btn--danger" (click)="openRejectModal(item.document)" title="Reject">
+                        <i class="fa-solid fa-times"></i>
+                      </button>
+                    }
+                    <button type="button" class="action-btn action-btn--edit" (click)="openUploadModal(item.documentType)" title="Re-upload">
+                      <i class="fa-solid fa-upload"></i>
+                    </button>
+                    <button type="button" class="action-btn action-btn--delete" (click)="deleteDocument(item.document)" title="Delete">
+                      <i class="fa-solid fa-trash"></i>
+                    </button>
+                  } @else {
+                    <button type="button" class="btn-upload" (click)="openUploadModal(item.documentType)">
+                      <i class="fa-solid fa-upload"></i>
+                      Upload
+                    </button>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        @if (!hasItems()) {
+          <div class="empty-state">
+            <i class="fa-solid fa-folder-open"></i>
+            <p>No document types configured</p>
+          </div>
+        }
+      }
+    </div>
+  </div>
+</div>
+
+<!-- Upload Modal -->
+@if (showUploadModal()) {
+  <div class="modal-overlay" (click)="closeUploadModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal__header">
+        <h3>Upload {{ uploadingType()?.name }}</h3>
+        <button type="button" class="modal__close" (click)="closeUploadModal()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="modal__body">
+        @if (uploadError()) {
+          <div class="error-message">
+            <i class="fa-solid fa-exclamation-circle"></i>
+            {{ uploadError() }}
+          </div>
+        }
+
+        <!-- File Drop Zone -->
+        <div class="file-dropzone" [class.has-file]="selectedFile()">
+          <input
+            type="file"
+            (change)="onFileSelected($event)"
+            [accept]="getAcceptedExtensions()"
+          />
+          @if (selectedFile()) {
+            <div class="selected-file">
+              <i class="fa-solid fa-file"></i>
+              <span>{{ selectedFile()?.name }}</span>
+              <span class="file-size">{{ formatSize(selectedFile()?.size ?? 0) }}</span>
+            </div>
+          } @else {
+            <div class="dropzone-content">
+              <i class="fa-solid fa-cloud-upload-alt"></i>
+              <p>Click to select or drag & drop</p>
+              <span class="file-hint">
+                Allowed: {{ uploadingType()?.allowedExtensions }} (max {{ uploadingType()?.maxSizeMb }}MB)
+              </span>
+            </div>
+          }
+        </div>
+
+        <div class="form-grid">
+          <!-- Document Number -->
+          <div class="form-group">
+            <label>Document Number</label>
+            <input
+              type="text"
+              [value]="uploadForm().documentNumber"
+              (input)="onDocumentNumberInput($event)"
+              placeholder="e.g., Aadhaar number, certificate number"
+            />
+          </div>
+
+          <!-- Issue Date -->
+          <div class="form-group">
+            <label>Issue Date</label>
+            <input
+              type="date"
+              [value]="uploadForm().issueDate"
+              (change)="onIssueDateChange($event)"
+            />
+          </div>
+
+          <!-- Expiry Date (if applicable) -->
+          @if (uploadingType()?.hasExpiry) {
+            <div class="form-group">
+              <label>Expiry Date</label>
+              <input
+                type="date"
+                [value]="uploadForm().expiryDate"
+                (change)="onExpiryDateChange($event)"
+              />
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="modal__footer">
+        <button type="button" class="btn-secondary" (click)="closeUploadModal()">
+          Cancel
+        </button>
+        <button type="button" class="btn-primary" (click)="uploadDocument()" [disabled]="!selectedFile()">
+          Upload
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Preview Modal -->
+@if (showPreviewModal() && previewDocument()) {
+  <div class="modal-overlay" (click)="closePreview()">
+    <div class="modal modal--large" (click)="$event.stopPropagation()">
+      <div class="modal__header">
+        <h3>{{ previewDocument()?.documentType?.name }}</h3>
+        <button type="button" class="modal__close" (click)="closePreview()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="modal__body preview-body">
+        @if (previewDocument()?.mimeType?.startsWith('image/')) {
+          <img [src]="previewDocument()?.fileUrl" [alt]="previewDocument()?.fileName" class="preview-image" />
+        } @else if (previewDocument()?.mimeType === 'application/pdf') {
+          <iframe [src]="previewDocument()?.fileUrl" class="preview-pdf"></iframe>
+        } @else {
+          <div class="preview-unsupported">
+            <i class="fa-solid fa-file"></i>
+            <p>Preview not available for this file type</p>
+            <button type="button" class="btn-primary" (click)="downloadDocument(previewDocument()!)">
+              <i class="fa-solid fa-download"></i>
+              Download
+            </button>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Verify Modal -->
+@if (showVerifyModal() && verifyingDocument()) {
+  <div class="modal-overlay" (click)="closeVerifyModal()">
+    <div class="modal modal--small" (click)="$event.stopPropagation()">
+      <div class="modal__header">
+        <h3>Verify Document</h3>
+        <button type="button" class="modal__close" (click)="closeVerifyModal()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="modal__body">
+        <p>Are you sure you want to mark this document as verified?</p>
+        <p class="text-muted">
+          <strong>{{ verifyingDocument()?.documentType?.name }}</strong><br />
+          {{ verifyingDocument()?.fileName }}
+        </p>
+      </div>
+
+      <div class="modal__footer">
+        <button type="button" class="btn-secondary" (click)="closeVerifyModal()">
+          Cancel
+        </button>
+        <button type="button" class="btn-success" (click)="confirmVerify()">
+          <i class="fa-solid fa-check"></i>
+          Verify
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Reject Modal -->
+@if (showRejectModal() && rejectingDocument()) {
+  <div class="modal-overlay" (click)="closeRejectModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal__header">
+        <h3>Reject Document</h3>
+        <button type="button" class="modal__close" (click)="closeRejectModal()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="modal__body">
+        <p>Please provide a reason for rejecting this document:</p>
+        <p class="text-muted">
+          <strong>{{ rejectingDocument()?.documentType?.name }}</strong><br />
+          {{ rejectingDocument()?.fileName }}
+        </p>
+        <div class="form-group">
+          <textarea
+            rows="3"
+            [value]="rejectionReason()"
+            (input)="onRejectReasonInput($event)"
+            placeholder="Enter rejection reason..."
+          ></textarea>
+        </div>
+      </div>
+
+      <div class="modal__footer">
+        <button type="button" class="btn-secondary" (click)="closeRejectModal()">
+          Cancel
+        </button>
+        <button type="button" class="btn-danger" (click)="confirmReject()" [disabled]="!rejectionReason().trim()">
+          <i class="fa-solid fa-times"></i>
+          Reject
+        </button>
+      </div>
+    </div>
+  </div>
+}

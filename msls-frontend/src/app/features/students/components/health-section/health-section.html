@@ -1,0 +1,509 @@
+<!-- Health Section -->
+<div class="health-section">
+  <!-- Health Card -->
+  <div class="detail-card">
+    <div class="detail-card__header">
+      <div class="detail-card__icon detail-card__icon--health">
+        <i class="fa-solid fa-heart-pulse"></i>
+      </div>
+      <h2 class="detail-card__title">Health Records</h2>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="tab-nav">
+      <button
+        type="button"
+        class="tab-btn"
+        [class.tab-btn--active]="activeTab() === 'overview'"
+        (click)="setTab('overview')"
+      >
+        <i class="fa-solid fa-chart-pie"></i>
+        Overview
+      </button>
+      <button
+        type="button"
+        class="tab-btn"
+        [class.tab-btn--active]="activeTab() === 'allergies'"
+        (click)="setTab('allergies')"
+      >
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        Allergies
+        @if (healthSummary()?.allergies?.length) {
+          <span class="badge">{{ healthSummary()?.allergies?.length }}</span>
+        }
+      </button>
+      <button
+        type="button"
+        class="tab-btn"
+        [class.tab-btn--active]="activeTab() === 'conditions'"
+        (click)="setTab('conditions')"
+      >
+        <i class="fa-solid fa-stethoscope"></i>
+        Conditions
+        @if (healthSummary()?.conditions?.length) {
+          <span class="badge">{{ healthSummary()?.conditions?.length }}</span>
+        }
+      </button>
+      <button
+        type="button"
+        class="tab-btn"
+        [class.tab-btn--active]="activeTab() === 'medications'"
+        (click)="setTab('medications')"
+      >
+        <i class="fa-solid fa-pills"></i>
+        Medications
+        @if (healthSummary()?.medications?.length) {
+          <span class="badge">{{ healthSummary()?.medications?.length }}</span>
+        }
+      </button>
+      <button
+        type="button"
+        class="tab-btn"
+        [class.tab-btn--active]="activeTab() === 'vaccinations'"
+        (click)="setTab('vaccinations')"
+      >
+        <i class="fa-solid fa-syringe"></i>
+        Vaccinations
+      </button>
+      <button
+        type="button"
+        class="tab-btn"
+        [class.tab-btn--active]="activeTab() === 'incidents'"
+        (click)="setTab('incidents')"
+      >
+        <i class="fa-solid fa-notes-medical"></i>
+        Incidents
+      </button>
+    </div>
+
+    <div class="detail-card__body">
+      @if (loading()) {
+        <div class="loading-state">
+          <msls-spinner size="md" />
+        </div>
+      } @else {
+        <!-- Overview Tab -->
+        @if (activeTab() === 'overview') {
+          <div class="overview-grid">
+            <!-- Profile Card -->
+            <div class="overview-card">
+              <h3><i class="fa-solid fa-user-doctor"></i> Basic Health Info</h3>
+              @if (healthSummary()?.profile) {
+                <div class="info-list">
+                  <div class="info-row">
+                    <span class="label">Blood Group</span>
+                    <span class="value">{{ healthSummary()?.profile?.bloodGroup || '—' }}</span>
+                  </div>
+                  <div class="info-row">
+                    <span class="label">Height</span>
+                    <span class="value">{{ healthSummary()?.profile?.heightCm ? healthSummary()?.profile?.heightCm + ' cm' : '—' }}</span>
+                  </div>
+                  <div class="info-row">
+                    <span class="label">Weight</span>
+                    <span class="value">{{ healthSummary()?.profile?.weightKg ? healthSummary()?.profile?.weightKg + ' kg' : '—' }}</span>
+                  </div>
+                  <div class="info-row">
+                    <span class="label">Vision (L/R)</span>
+                    <span class="value">{{ healthSummary()?.profile?.visionLeft || '—' }} / {{ healthSummary()?.profile?.visionRight || '—' }}</span>
+                  </div>
+                </div>
+              } @else {
+                <p class="empty-text">No health profile recorded</p>
+              }
+            </div>
+
+            <!-- Allergies Summary -->
+            <div class="overview-card" [class.overview-card--alert]="healthSummary()?.allergies?.length">
+              <h3><i class="fa-solid fa-triangle-exclamation"></i> Active Allergies</h3>
+              @if (healthSummary()?.allergies?.length) {
+                <div class="tag-list">
+                  @for (allergy of healthSummary()?.allergies; track allergy.id) {
+                    <span class="tag" [class]="'tag--' + getSeverityVariant(allergy.severity)">
+                      {{ allergy.allergen }}
+                    </span>
+                  }
+                </div>
+              } @else {
+                <p class="empty-text">No known allergies</p>
+              }
+            </div>
+
+            <!-- Conditions Summary -->
+            <div class="overview-card" [class.overview-card--warning]="healthSummary()?.conditions?.length">
+              <h3><i class="fa-solid fa-stethoscope"></i> Chronic Conditions</h3>
+              @if (healthSummary()?.conditions?.length) {
+                <div class="tag-list">
+                  @for (condition of healthSummary()?.conditions; track condition.id) {
+                    <span class="tag" [class]="'tag--' + getSeverityVariant(condition.severity)">
+                      {{ condition.conditionName }}
+                    </span>
+                  }
+                </div>
+              } @else {
+                <p class="empty-text">No chronic conditions</p>
+              }
+            </div>
+
+            <!-- Medications Summary -->
+            <div class="overview-card">
+              <h3><i class="fa-solid fa-pills"></i> Active Medications</h3>
+              @if (healthSummary()?.medications?.length) {
+                <ul class="simple-list">
+                  @for (med of healthSummary()?.medications; track med.id) {
+                    <li>{{ med.medicationName }} - {{ med.dosage }}</li>
+                  }
+                </ul>
+              } @else {
+                <p class="empty-text">No current medications</p>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Allergies Tab -->
+        @if (activeTab() === 'allergies') {
+          <div class="tab-header">
+            <h3>Allergies</h3>
+            <button type="button" class="add-btn" (click)="openAllergyForm()">
+              <i class="fa-solid fa-plus"></i>
+              Add Allergy
+            </button>
+          </div>
+
+          @if (healthSummary()?.allergies?.length === 0) {
+            <div class="empty-state">
+              <i class="fa-solid fa-shield-heart"></i>
+              <p>No allergies recorded</p>
+              <button type="button" class="btn-link" (click)="openAllergyForm()">
+                Add first allergy
+              </button>
+            </div>
+          } @else {
+            <div class="record-list">
+              @for (allergy of healthSummary()?.allergies; track allergy.id) {
+                <div class="record-card">
+                  <div class="record-card__header">
+                    <div class="record-card__title">
+                      <h4>{{ allergy.allergen }}</h4>
+                      <msls-badge [variant]="getSeverityVariant(allergy.severity)" size="sm">
+                        {{ getAllergySeverityLabel(allergy.severity) }}
+                      </msls-badge>
+                    </div>
+                    <div class="record-card__actions">
+                      <button type="button" class="action-btn action-btn--edit" (click)="openAllergyForm(allergy)">
+                        <i class="fa-solid fa-pen"></i>
+                      </button>
+                      <button type="button" class="action-btn action-btn--delete" (click)="deleteAllergy(allergy)">
+                        <i class="fa-solid fa-trash"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="record-card__body">
+                    <div class="detail-row">
+                      <span class="label">Type:</span>
+                      <span>{{ getAllergyTypeLabel(allergy.allergyType) }}</span>
+                    </div>
+                    @if (allergy.reactionDescription) {
+                      <div class="detail-row">
+                        <span class="label">Reaction:</span>
+                        <span>{{ allergy.reactionDescription }}</span>
+                      </div>
+                    }
+                    @if (allergy.emergencyMedication) {
+                      <div class="detail-row emergency">
+                        <span class="label">Emergency Med:</span>
+                        <span>{{ allergy.emergencyMedication }}</span>
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        }
+
+        <!-- Conditions Tab -->
+        @if (activeTab() === 'conditions') {
+          <div class="tab-header">
+            <h3>Chronic Conditions</h3>
+            <button type="button" class="add-btn" disabled>
+              <i class="fa-solid fa-plus"></i>
+              Add Condition
+            </button>
+          </div>
+
+          @if (healthSummary()?.conditions?.length === 0) {
+            <div class="empty-state">
+              <i class="fa-solid fa-heart"></i>
+              <p>No chronic conditions recorded</p>
+            </div>
+          } @else {
+            <div class="record-list">
+              @for (condition of healthSummary()?.conditions; track condition.id) {
+                <div class="record-card">
+                  <div class="record-card__header">
+                    <div class="record-card__title">
+                      <h4>{{ condition.conditionName }}</h4>
+                      <msls-badge [variant]="getSeverityVariant(condition.severity)" size="sm">
+                        {{ condition.severity }}
+                      </msls-badge>
+                    </div>
+                  </div>
+                  <div class="record-card__body">
+                    <div class="detail-row">
+                      <span class="label">Type:</span>
+                      <span>{{ getConditionTypeLabel(condition.conditionType) }}</span>
+                    </div>
+                    @if (condition.managementPlan) {
+                      <div class="detail-row">
+                        <span class="label">Management:</span>
+                        <span>{{ condition.managementPlan }}</span>
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        }
+
+        <!-- Medications Tab -->
+        @if (activeTab() === 'medications') {
+          <div class="tab-header">
+            <h3>Medications</h3>
+            <button type="button" class="add-btn" disabled>
+              <i class="fa-solid fa-plus"></i>
+              Add Medication
+            </button>
+          </div>
+
+          @if (healthSummary()?.medications?.length === 0) {
+            <div class="empty-state">
+              <i class="fa-solid fa-capsules"></i>
+              <p>No medications recorded</p>
+            </div>
+          } @else {
+            <div class="record-list">
+              @for (med of healthSummary()?.medications; track med.id) {
+                <div class="record-card">
+                  <div class="record-card__header">
+                    <div class="record-card__title">
+                      <h4>{{ med.medicationName }}</h4>
+                      @if (med.administeredAtSchool) {
+                        <msls-badge variant="info" size="sm">School Admin</msls-badge>
+                      }
+                    </div>
+                  </div>
+                  <div class="record-card__body">
+                    <div class="detail-row">
+                      <span class="label">Dosage:</span>
+                      <span>{{ med.dosage }}</span>
+                    </div>
+                    <div class="detail-row">
+                      <span class="label">Frequency:</span>
+                      <span>{{ getMedicationFrequencyLabel(med.frequency) }}</span>
+                    </div>
+                    @if (med.purpose) {
+                      <div class="detail-row">
+                        <span class="label">Purpose:</span>
+                        <span>{{ med.purpose }}</span>
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        }
+
+        <!-- Vaccinations Tab -->
+        @if (activeTab() === 'vaccinations') {
+          <div class="tab-header">
+            <h3>Vaccination Records</h3>
+            <button type="button" class="add-btn" disabled>
+              <i class="fa-solid fa-plus"></i>
+              Add Vaccination
+            </button>
+          </div>
+
+          @if (healthSummary()?.vaccinations?.length === 0) {
+            <div class="empty-state">
+              <i class="fa-solid fa-syringe"></i>
+              <p>No vaccinations recorded</p>
+            </div>
+          } @else {
+            <div class="record-list">
+              @for (vax of healthSummary()?.vaccinations; track vax.id) {
+                <div class="record-card">
+                  <div class="record-card__header">
+                    <div class="record-card__title">
+                      <h4>{{ vax.vaccineName }}</h4>
+                      @if (vax.isVerified) {
+                        <msls-badge variant="success" size="sm">Verified</msls-badge>
+                      }
+                    </div>
+                  </div>
+                  <div class="record-card__body">
+                    <div class="detail-row">
+                      <span class="label">Date:</span>
+                      <span>{{ formatDate(vax.administeredDate) }}</span>
+                    </div>
+                    <div class="detail-row">
+                      <span class="label">Dose:</span>
+                      <span>#{{ vax.doseNumber }}</span>
+                    </div>
+                    @if (vax.nextDueDate) {
+                      <div class="detail-row">
+                        <span class="label">Next Due:</span>
+                        <span>{{ formatDate(vax.nextDueDate) }}</span>
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        }
+
+        <!-- Incidents Tab -->
+        @if (activeTab() === 'incidents') {
+          <div class="tab-header">
+            <h3>Medical Incidents</h3>
+            <button type="button" class="add-btn" disabled>
+              <i class="fa-solid fa-plus"></i>
+              Report Incident
+            </button>
+          </div>
+
+          @if (healthSummary()?.recentIncidents?.length === 0) {
+            <div class="empty-state">
+              <i class="fa-solid fa-file-medical"></i>
+              <p>No incidents recorded</p>
+            </div>
+          } @else {
+            <div class="record-list">
+              @for (incident of healthSummary()?.recentIncidents; track incident.id) {
+                <div class="record-card">
+                  <div class="record-card__header">
+                    <div class="record-card__title">
+                      <h4>{{ getIncidentTypeLabel(incident.incidentType) }}</h4>
+                      <span class="date">{{ formatDate(incident.incidentDate) }}</span>
+                    </div>
+                  </div>
+                  <div class="record-card__body">
+                    <p class="description">{{ incident.description }}</p>
+                    <div class="detail-row">
+                      <span class="label">Action Taken:</span>
+                      <span>{{ incident.actionTaken }}</span>
+                    </div>
+                    @if (incident.parentNotified) {
+                      <div class="detail-row">
+                        <i class="fa-solid fa-check-circle text-success"></i>
+                        <span>Parent Notified</span>
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        }
+      }
+    </div>
+  </div>
+</div>
+
+<!-- Allergy Form Modal -->
+@if (showAllergyForm()) {
+  <div class="modal-overlay" (click)="closeAllergyForm()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal__header">
+        <h3>{{ editingAllergy() ? 'Edit Allergy' : 'Add Allergy' }}</h3>
+        <button type="button" class="modal__close" (click)="closeAllergyForm()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="modal__body">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="allergen">Allergen <span class="required">*</span></label>
+            <input
+              type="text"
+              id="allergen"
+              [value]="allergyForm().allergen"
+              (input)="onAllergenInput($event)"
+              placeholder="e.g., Peanuts, Penicillin"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="allergyType">Type <span class="required">*</span></label>
+            <select
+              id="allergyType"
+              [value]="allergyForm().allergyType"
+              (change)="onAllergyTypeChange($event)"
+            >
+              @for (opt of allergyTypeOptions; track opt.value) {
+                <option [value]="opt.value">{{ opt.label }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="severity">Severity <span class="required">*</span></label>
+            <select
+              id="severity"
+              [value]="allergyForm().severity"
+              (change)="onSeverityChange($event)"
+            >
+              @for (opt of allergySeverityOptions; track opt.value) {
+                <option [value]="opt.value">{{ opt.label }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="emergencyMed">Emergency Medication</label>
+            <input
+              type="text"
+              id="emergencyMed"
+              [value]="allergyForm().emergencyMedication || ''"
+              (input)="onEmergencyMedInput($event)"
+              placeholder="e.g., EpiPen"
+            />
+          </div>
+
+          <div class="form-group form-group--full">
+            <label for="reaction">Reaction Description</label>
+            <textarea
+              id="reaction"
+              rows="2"
+              [value]="allergyForm().reactionDescription || ''"
+              (input)="onReactionInput($event)"
+              placeholder="Describe the allergic reaction..."
+            ></textarea>
+          </div>
+
+          <div class="form-group form-group--full">
+            <label for="treatment">Treatment Instructions</label>
+            <textarea
+              id="treatment"
+              rows="2"
+              [value]="allergyForm().treatmentInstructions || ''"
+              (input)="onTreatmentInput($event)"
+              placeholder="How to treat the reaction..."
+            ></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal__footer">
+        <button type="button" class="btn-secondary" (click)="closeAllergyForm()">
+          Cancel
+        </button>
+        <button type="button" class="btn-primary" (click)="saveAllergy()">
+          {{ editingAllergy() ? 'Update' : 'Add' }} Allergy
+        </button>
+      </div>
+    </div>
+  </div>
+}

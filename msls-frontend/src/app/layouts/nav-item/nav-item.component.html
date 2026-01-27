@@ -1,0 +1,88 @@
+<!-- Navigation Item Container - only render if has content -->
+@if (isLink() || hasChildren()) {
+<div [class]="itemClasses()">
+  <!-- Link Item (no children) -->
+  @if (isLink()) {
+    <a
+      class="nav-item__link"
+      [routerLink]="item().route"
+      routerLinkActive="nav-item__link--active"
+      [routerLinkActiveOptions]="{ exact: item().route === '/dashboard' }"
+      (click)="onItemClick($event)"
+      [attr.title]="collapsed() ? item().label : null"
+      tabindex="0"
+    >
+      <i [class]="getIconClass(item().icon)" class="nav-item__icon"></i>
+      @if (!collapsed()) {
+        <span class="nav-item__label">{{ item().label }}</span>
+      }
+      @if (item().badge && !collapsed()) {
+        <span class="nav-item__badge">{{ item().badge }}</span>
+      }
+    </a>
+  }
+
+  <!-- Parent Item (has children) -->
+  @if (hasChildren()) {
+    <div class="nav-item__parent-wrapper">
+      <button
+        type="button"
+        class="nav-item__button"
+        [class.nav-item__button--active]="isChildActive()"
+        (click)="onItemClick($event)"
+        (mouseenter)="onParentHover(true, $event)"
+        (mouseleave)="onParentHover(false)"
+        [attr.aria-expanded]="isExpanded()"
+        [attr.title]="collapsed() ? item().label : null"
+        tabindex="0"
+      >
+        <i [class]="getIconClass(item().icon)" class="nav-item__icon"></i>
+        @if (!collapsed()) {
+          <span class="nav-item__label">{{ item().label }}</span>
+          <i
+            class="fa-solid fa-chevron-down nav-item__chevron"
+            [class.nav-item__chevron--expanded]="isExpanded()"
+          ></i>
+        }
+      </button>
+
+      <!-- Collapsed state: Flyout menu (fixed position) -->
+      @if (collapsed() && showFlyout()) {
+        <div
+          class="nav-item__flyout"
+          [style.top.px]="flyoutPosition().top"
+          [style.left.px]="flyoutPosition().left"
+          (mouseenter)="onFlyoutHover(true)"
+          (mouseleave)="onFlyoutHover(false)"
+        >
+          <div class="nav-item__flyout-header">{{ item().label }}</div>
+          @for (child of item().children; track child.label) {
+            <a
+              class="nav-item__flyout-link"
+              [routerLink]="child.route"
+              routerLinkActive="nav-item__flyout-link--active"
+              (click)="onChildClick()"
+            >
+              <i [class]="getIconClass(child.icon)" class="nav-item__flyout-icon"></i>
+              <span>{{ child.label }}</span>
+            </a>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Expanded state: Children inline -->
+    @if (!collapsed() && isExpanded()) {
+      <div class="nav-item__children" role="group">
+        @for (child of item().children; track child.label) {
+          <msls-nav-item
+            [item]="child"
+            [collapsed]="collapsed()"
+            [level]="level() + 1"
+          />
+        }
+      </div>
+    }
+  }
+</div>
+}

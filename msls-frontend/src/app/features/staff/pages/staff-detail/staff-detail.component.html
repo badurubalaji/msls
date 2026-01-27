@@ -1,0 +1,446 @@
+<!-- Staff Detail Page -->
+<div class="staff-detail-page">
+  <!-- Back Button -->
+  <button type="button" class="back-btn" (click)="goBack()">
+    <i class="fa-solid fa-arrow-left"></i>
+    <span>Back to Staff</span>
+  </button>
+
+  @if (loading() && !staff()) {
+    <!-- Loading State -->
+    <div class="loading-state">
+      <div class="loading-spinner"></div>
+      <p>Loading staff details...</p>
+    </div>
+  } @else if (error()) {
+    <!-- Error State -->
+    <div class="error-state">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      <h2>Unable to load staff</h2>
+      <p>{{ error() }}</p>
+      <button type="button" class="retry-btn" (click)="goBack()">
+        Go Back
+      </button>
+    </div>
+  } @else if (staff(); as staffMember) {
+    <!-- Header Card -->
+    <div class="profile-card">
+      <div class="profile-card__header">
+        <div class="profile-card__avatar">
+          <msls-avatar
+            [src]="staffMember.photoUrl || ''"
+            [name]="staffMember.fullName"
+            size="xl"
+          />
+          @if (staffMember.status === 'active') {
+            <span class="profile-card__status-dot"></span>
+          }
+        </div>
+
+        <div class="profile-card__info">
+          <div class="profile-card__name-row">
+            <h1>{{ staffMember.fullName }}</h1>
+            <msls-badge
+              [variant]="getStatusVariant(staffMember.status)"
+              [dot]="true"
+            >
+              {{ getStatusLabel(staffMember.status) }}
+            </msls-badge>
+          </div>
+
+          <div class="profile-card__meta">
+            <span class="employee-id">{{ staffMember.employeeId }}</span>
+            @if (staffMember.designationName) {
+              <span>
+                <i class="fa-solid fa-briefcase"></i>
+                {{ staffMember.designationName }}
+              </span>
+            }
+            @if (staffMember.departmentName) {
+              <span>
+                <i class="fa-solid fa-building"></i>
+                {{ staffMember.departmentName }}
+              </span>
+            }
+          </div>
+
+          <div class="profile-card__quick-info">
+            <div class="quick-info-item">
+              <i class="fa-solid fa-envelope"></i>
+              <span>{{ staffMember.workEmail }}</span>
+            </div>
+            <div class="quick-info-item">
+              <i class="fa-solid fa-phone"></i>
+              <span>{{ staffMember.workPhone }}</span>
+            </div>
+            <div class="quick-info-item">
+              <i class="fa-solid fa-calendar"></i>
+              <span>Joined {{ formatDate(staffMember.joinDate) }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="profile-card__actions">
+          <button type="button" class="edit-btn" (click)="onEdit()">
+            <i class="fa-solid fa-pen"></i>
+            <span>Edit</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="tabs">
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active]="activeTab() === 'overview'"
+        (click)="setTab('overview')"
+      >
+        <i class="fa-solid fa-user"></i>
+        Overview
+      </button>
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active]="activeTab() === 'employment'"
+        (click)="setTab('employment')"
+      >
+        <i class="fa-solid fa-briefcase"></i>
+        Employment
+      </button>
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active]="activeTab() === 'salary'"
+        (click)="setTab('salary')"
+      >
+        <i class="fa-solid fa-indian-rupee-sign"></i>
+        Salary
+      </button>
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active]="activeTab() === 'history'"
+        (click)="setTab('history')"
+      >
+        <i class="fa-solid fa-clock-rotate-left"></i>
+        Status History
+      </button>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="tab-content">
+      @if (activeTab() === 'overview') {
+        <!-- Overview Tab -->
+        <div class="content-grid">
+          <!-- Personal Details -->
+          <div class="detail-card">
+            <h3 class="detail-card__title">
+              <i class="fa-solid fa-user"></i>
+              Personal Details
+            </h3>
+            <div class="detail-card__content">
+              <div class="detail-row">
+                <span class="detail-label">Full Name</span>
+                <span class="detail-value">{{ staffMember.fullName }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Date of Birth</span>
+                <span class="detail-value">
+                  {{ formatDate(staffMember.dateOfBirth) }}
+                  <span class="detail-sub">({{ getAge(staffMember.dateOfBirth) }} years)</span>
+                </span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Gender</span>
+                <span class="detail-value">{{ getGenderLabel(staffMember.gender) }}</span>
+              </div>
+              @if (staffMember.bloodGroup) {
+                <div class="detail-row">
+                  <span class="detail-label">Blood Group</span>
+                  <span class="detail-value">{{ staffMember.bloodGroup }}</span>
+                </div>
+              }
+              @if (staffMember.nationality) {
+                <div class="detail-row">
+                  <span class="detail-label">Nationality</span>
+                  <span class="detail-value">{{ staffMember.nationality }}</span>
+                </div>
+              }
+              @if (staffMember.religion) {
+                <div class="detail-row">
+                  <span class="detail-label">Religion</span>
+                  <span class="detail-value">{{ staffMember.religion }}</span>
+                </div>
+              }
+              @if (staffMember.maritalStatus) {
+                <div class="detail-row">
+                  <span class="detail-label">Marital Status</span>
+                  <span class="detail-value">{{ staffMember.maritalStatus | titlecase }}</span>
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- Contact Details -->
+          <div class="detail-card">
+            <h3 class="detail-card__title">
+              <i class="fa-solid fa-address-book"></i>
+              Contact Details
+            </h3>
+            <div class="detail-card__content">
+              <div class="detail-row">
+                <span class="detail-label">Work Email</span>
+                <span class="detail-value">{{ staffMember.workEmail }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Work Phone</span>
+                <span class="detail-value">{{ staffMember.workPhone }}</span>
+              </div>
+              @if (staffMember.personalEmail) {
+                <div class="detail-row">
+                  <span class="detail-label">Personal Email</span>
+                  <span class="detail-value">{{ staffMember.personalEmail }}</span>
+                </div>
+              }
+              @if (staffMember.personalPhone) {
+                <div class="detail-row">
+                  <span class="detail-label">Personal Phone</span>
+                  <span class="detail-value">{{ staffMember.personalPhone }}</span>
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- Emergency Contact -->
+          @if (staffMember.emergencyContactName) {
+            <div class="detail-card">
+              <h3 class="detail-card__title">
+                <i class="fa-solid fa-phone-volume"></i>
+                Emergency Contact
+              </h3>
+              <div class="detail-card__content">
+                <div class="detail-row">
+                  <span class="detail-label">Name</span>
+                  <span class="detail-value">{{ staffMember.emergencyContactName }}</span>
+                </div>
+                @if (staffMember.emergencyContactPhone) {
+                  <div class="detail-row">
+                    <span class="detail-label">Phone</span>
+                    <span class="detail-value">{{ staffMember.emergencyContactPhone }}</span>
+                  </div>
+                }
+                @if (staffMember.emergencyContactRelation) {
+                  <div class="detail-row">
+                    <span class="detail-label">Relation</span>
+                    <span class="detail-value">{{ staffMember.emergencyContactRelation }}</span>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Address -->
+          @if (staffMember.currentAddress) {
+            <div class="detail-card">
+              <h3 class="detail-card__title">
+                <i class="fa-solid fa-location-dot"></i>
+                Address
+              </h3>
+              <div class="detail-card__content">
+                <div class="detail-row">
+                  <span class="detail-label">Current Address</span>
+                  <span class="detail-value">{{ formatAddress(staffMember.currentAddress) }}</span>
+                </div>
+                @if (staffMember.permanentAddress && !staffMember.sameAsCurrent) {
+                  <div class="detail-row">
+                    <span class="detail-label">Permanent Address</span>
+                    <span class="detail-value">{{ formatAddress(staffMember.permanentAddress) }}</span>
+                  </div>
+                } @else if (staffMember.sameAsCurrent) {
+                  <div class="detail-row">
+                    <span class="detail-label">Permanent Address</span>
+                    <span class="detail-value detail-sub">Same as current address</span>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      @if (activeTab() === 'employment') {
+        <!-- Employment Tab -->
+        <div class="content-grid">
+          <!-- Employment Info -->
+          <div class="detail-card">
+            <h3 class="detail-card__title">
+              <i class="fa-solid fa-briefcase"></i>
+              Employment Information
+            </h3>
+            <div class="detail-card__content">
+              <div class="detail-row">
+                <span class="detail-label">Employee ID</span>
+                <span class="detail-value employee-id">{{ staffMember.employeeId }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Staff Type</span>
+                <span class="detail-value">{{ getStaffTypeLabel(staffMember.staffType) }}</span>
+              </div>
+              @if (staffMember.departmentName) {
+                <div class="detail-row">
+                  <span class="detail-label">Department</span>
+                  <span class="detail-value">{{ staffMember.departmentName }}</span>
+                </div>
+              }
+              @if (staffMember.designationName) {
+                <div class="detail-row">
+                  <span class="detail-label">Designation</span>
+                  <span class="detail-value">{{ staffMember.designationName }}</span>
+                </div>
+              }
+              @if (staffMember.reportingManager) {
+                <div class="detail-row">
+                  <span class="detail-label">Reporting Manager</span>
+                  <span class="detail-value">{{ staffMember.reportingManager.name }}</span>
+                </div>
+              }
+              @if (staffMember.branchName) {
+                <div class="detail-row">
+                  <span class="detail-label">Branch</span>
+                  <span class="detail-value">{{ staffMember.branchName }}</span>
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- Dates -->
+          <div class="detail-card">
+            <h3 class="detail-card__title">
+              <i class="fa-solid fa-calendar"></i>
+              Important Dates
+            </h3>
+            <div class="detail-card__content">
+              <div class="detail-row">
+                <span class="detail-label">Join Date</span>
+                <span class="detail-value">
+                  {{ formatDate(staffMember.joinDate) }}
+                  <span class="detail-sub">({{ getTenure(staffMember.joinDate) }})</span>
+                </span>
+              </div>
+              @if (staffMember.confirmationDate) {
+                <div class="detail-row">
+                  <span class="detail-label">Confirmation Date</span>
+                  <span class="detail-value">{{ formatDate(staffMember.confirmationDate) }}</span>
+                </div>
+              }
+              @if (staffMember.probationEndDate) {
+                <div class="detail-row">
+                  <span class="detail-label">Probation End Date</span>
+                  <span class="detail-value">{{ formatDate(staffMember.probationEndDate) }}</span>
+                </div>
+              }
+              @if (staffMember.terminationDate) {
+                <div class="detail-row">
+                  <span class="detail-label">Termination Date</span>
+                  <span class="detail-value danger">{{ formatDate(staffMember.terminationDate) }}</span>
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- Status -->
+          <div class="detail-card">
+            <h3 class="detail-card__title">
+              <i class="fa-solid fa-circle-info"></i>
+              Current Status
+            </h3>
+            <div class="detail-card__content">
+              <div class="detail-row">
+                <span class="detail-label">Status</span>
+                <span class="detail-value">
+                  <msls-badge
+                    [variant]="getStatusVariant(staffMember.status)"
+                    [dot]="true"
+                  >
+                    {{ getStatusLabel(staffMember.status) }}
+                  </msls-badge>
+                </span>
+              </div>
+              @if (staffMember.statusReason) {
+                <div class="detail-row">
+                  <span class="detail-label">Reason</span>
+                  <span class="detail-value">{{ staffMember.statusReason }}</span>
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- Bio -->
+          @if (staffMember.bio) {
+            <div class="detail-card detail-card--full">
+              <h3 class="detail-card__title">
+                <i class="fa-solid fa-file-lines"></i>
+                Bio
+              </h3>
+              <div class="detail-card__content">
+                <p class="bio-text">{{ staffMember.bio }}</p>
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      @if (activeTab() === 'salary') {
+        <!-- Salary Tab -->
+        <div class="salary-tab">
+          <msls-staff-salary [staffId]="staffId()" />
+        </div>
+      }
+
+      @if (activeTab() === 'history') {
+        <!-- Status History Tab -->
+        <div class="history-card">
+          <h3 class="history-card__title">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+            Status Change History
+          </h3>
+
+          @if (statusHistory().length === 0) {
+            <div class="history-empty">
+              <i class="fa-solid fa-inbox"></i>
+              <p>No status changes recorded</p>
+            </div>
+          } @else {
+            <div class="history-timeline">
+              @for (entry of statusHistory(); track entry.id) {
+                <div class="history-item">
+                  <div class="history-item__dot"></div>
+                  <div class="history-item__content">
+                    <div class="history-item__header">
+                      <div class="history-item__badges">
+                        @if (entry.oldStatus) {
+                          <span class="history-badge history-badge--old">{{ entry.oldStatus }}</span>
+                          <i class="fa-solid fa-arrow-right"></i>
+                        }
+                        <span class="history-badge history-badge--new">{{ entry.newStatus }}</span>
+                      </div>
+                      <span class="history-item__date">{{ formatDateTime(entry.changedAt) }}</span>
+                    </div>
+                    @if (entry.reason) {
+                      <p class="history-item__reason">{{ entry.reason }}</p>
+                    }
+                    <p class="history-item__effective">
+                      Effective: {{ formatDate(entry.effectiveDate) }}
+                    </p>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>

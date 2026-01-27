@@ -1,0 +1,266 @@
+<div class="tests-page">
+  <div class="tests-card">
+    <!-- Header -->
+    <div class="tests-header">
+      <div class="tests-header__left">
+        <h1 class="tests-header__title">Entrance Tests</h1>
+        <p class="tests-header__subtitle">
+          Schedule and manage entrance tests for admissions
+        </p>
+      </div>
+      <div class="tests-header__right">
+        <div class="search-input">
+          <i class="fa-solid fa-magnifying-glass search-icon"></i>
+          <input
+            type="text"
+            placeholder="Search tests..."
+            [ngModel]="searchTerm()"
+            (ngModelChange)="onSearchChange($event)"
+            class="search-field"
+          />
+        </div>
+        <select
+          class="filter-select"
+          [ngModel]="statusFilter()"
+          (ngModelChange)="onStatusFilterChange($event)"
+        >
+          <option value="">All Status</option>
+          <option value="scheduled">Scheduled</option>
+          <option value="in_progress">In Progress</option>
+          <option value="completed">Completed</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+        <button class="btn btn-primary" (click)="openCreateModal()">
+          <i class="fa-solid fa-plus"></i>
+          New Test
+        </button>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    @if (loading()) {
+      <div class="loading-container">
+        <div class="spinner"></div>
+        <p>Loading entrance tests...</p>
+      </div>
+    } @else if (error()) {
+      <div class="error-container">
+        <i class="fa-solid fa-circle-exclamation"></i>
+        <p>{{ error() }}</p>
+        <button class="btn btn-secondary" (click)="loadTests()">
+          Retry
+        </button>
+      </div>
+    } @else {
+      <!-- Test Cards Grid -->
+      <div class="tests-grid">
+        @for (test of filteredTests(); track test.id) {
+          <div class="test-card" [class.test-card--completed]="test.status === 'completed'" [class.test-card--cancelled]="test.status === 'cancelled'">
+            <div class="test-card__header">
+              <div class="test-card__title-row">
+                <h3 class="test-card__title">{{ test.testName }}</h3>
+                <span
+                  class="badge"
+                  [class]="'badge--' + getStatusConfig(test.status).variant"
+                >
+                  <i [class]="getStatusConfig(test.status).icon"></i>
+                  {{ getStatusConfig(test.status).label }}
+                </span>
+              </div>
+              <div class="test-card__classes">
+                @for (className of test.classNames; track className) {
+                  <span class="class-tag">{{ className }}</span>
+                }
+              </div>
+            </div>
+
+            <div class="test-card__body">
+              <div class="test-card__info">
+                <div class="info-item">
+                  <i class="fa-regular fa-calendar"></i>
+                  <span>{{ formatDate(test.testDate) }}</span>
+                </div>
+                <div class="info-item">
+                  <i class="fa-regular fa-clock"></i>
+                  <span>{{ formatTime(test.startTime) }} ({{ test.durationMinutes }} min)</span>
+                </div>
+                @if (test.venue) {
+                  <div class="info-item">
+                    <i class="fa-solid fa-location-dot"></i>
+                    <span>{{ test.venue }}</span>
+                  </div>
+                }
+              </div>
+
+              <div class="test-card__stats">
+                <div class="stat-item">
+                  <span class="stat-value">{{ test.registeredCount || 0 }}</span>
+                  <span class="stat-label">Registered</span>
+                </div>
+                <div class="stat-divider"></div>
+                <div class="stat-item">
+                  <span class="stat-value">{{ test.maxCandidates }}</span>
+                  <span class="stat-label">Max Seats</span>
+                </div>
+                <div class="stat-divider"></div>
+                <div class="stat-item">
+                  <span class="stat-value">{{ getTotalMaxMarks(test) }}</span>
+                  <span class="stat-label">Total Marks</span>
+                </div>
+              </div>
+
+              <div class="test-card__subjects">
+                <span class="subjects-label">Subjects:</span>
+                @for (subject of test.subjects; track subject.name) {
+                  <span class="subject-chip">{{ subject.name }} ({{ subject.maxMarks }})</span>
+                }
+              </div>
+            </div>
+
+            <div class="test-card__footer">
+              @if (test.status === 'scheduled') {
+                <button
+                  class="action-btn"
+                  (click)="viewRegistrations(test)"
+                  title="View Registrations"
+                >
+                  <i class="fa-solid fa-users"></i>
+                  Registrations
+                </button>
+                @if ((test.registeredCount || 0) > 0) {
+                  <button
+                    class="action-btn action-btn--primary"
+                    (click)="downloadHallTickets(test)"
+                    title="Download Hall Tickets"
+                  >
+                    <i class="fa-solid fa-id-card"></i>
+                    Hall Tickets
+                  </button>
+                }
+                <button
+                  class="action-btn"
+                  (click)="editTest(test)"
+                  title="Edit Test"
+                >
+                  <i class="fa-regular fa-pen-to-square"></i>
+                </button>
+                <button
+                  class="action-btn action-btn--success"
+                  (click)="completeTest(test)"
+                  title="Mark as Completed"
+                >
+                  <i class="fa-solid fa-check"></i>
+                </button>
+                <button
+                  class="action-btn action-btn--danger"
+                  (click)="cancelTest(test)"
+                  title="Cancel Test"
+                >
+                  <i class="fa-solid fa-times"></i>
+                </button>
+              }
+              @if (test.status === 'completed') {
+                <button
+                  class="action-btn action-btn--primary"
+                  (click)="viewResults(test)"
+                  title="View/Enter Results"
+                >
+                  <i class="fa-solid fa-clipboard-list"></i>
+                  Results
+                </button>
+                <button
+                  class="action-btn"
+                  (click)="viewRegistrations(test)"
+                  title="View Registrations"
+                >
+                  <i class="fa-solid fa-users"></i>
+                </button>
+              }
+              @if (test.status === 'cancelled' || test.status === 'in_progress') {
+                <button
+                  class="action-btn"
+                  (click)="viewRegistrations(test)"
+                  title="View Registrations"
+                >
+                  <i class="fa-solid fa-users"></i>
+                  View
+                </button>
+              }
+              @if (test.status === 'scheduled' && (test.registeredCount || 0) === 0) {
+                <button
+                  class="action-btn action-btn--danger"
+                  (click)="confirmDelete(test)"
+                  title="Delete Test"
+                >
+                  <i class="fa-regular fa-trash-can"></i>
+                </button>
+              }
+            </div>
+          </div>
+        } @empty {
+          <div class="empty-state">
+            <i class="fa-regular fa-clipboard"></i>
+            <p>No entrance tests found</p>
+            @if (!searchTerm() && !statusFilter()) {
+              <button class="btn btn-primary btn-sm" (click)="openCreateModal()">
+                <i class="fa-solid fa-plus"></i>
+                Create your first test
+              </button>
+            }
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Create/Edit Test Modal -->
+  <msls-modal
+    [isOpen]="showTestModal()"
+    title=""
+    size="lg"
+    (closed)="closeTestModal()"
+  >
+    <msls-test-form
+      [test]="editingTest()"
+      [loading]="saving()"
+      (save)="saveTest($event)"
+      (cancel)="closeTestModal()"
+    />
+  </msls-modal>
+
+  <!-- Delete Confirmation Modal -->
+  <msls-modal
+    [isOpen]="showDeleteModal()"
+    title="Delete Test"
+    size="sm"
+    (closed)="closeDeleteModal()"
+  >
+    <div class="delete-confirmation">
+      <div class="delete-icon">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+      </div>
+      <p>
+        Are you sure you want to delete
+        <strong>"{{ testToDelete()?.testName }}"</strong>?
+      </p>
+      <p class="delete-warning">This action cannot be undone.</p>
+      <div class="delete-actions">
+        <button class="btn btn-secondary" (click)="closeDeleteModal()">
+          Cancel
+        </button>
+        <button
+          class="btn btn-danger"
+          [disabled]="deleting()"
+          (click)="deleteTest()"
+        >
+          @if (deleting()) {
+            <div class="btn-spinner"></div>
+            Deleting...
+          } @else {
+            Delete
+          }
+        </button>
+      </div>
+    </div>
+  </msls-modal>
+</div>

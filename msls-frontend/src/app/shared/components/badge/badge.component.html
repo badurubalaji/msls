@@ -1,0 +1,8 @@
+<span [class]="badgeClasses()">
+  @if (dot()) {
+    <span class="msls-badge__dot" aria-hidden="true"></span>
+  }
+  <span class="msls-badge__content">
+    <ng-content />
+  </span>
+</span>

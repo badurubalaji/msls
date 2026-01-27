@@ -1,0 +1,221 @@
+// MSLS Input Component Styles
+// Uses CSS custom properties from theme.css for consistent theming
+
+.msls-input {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+
+  // ===============================
+  // Label
+  // ===============================
+
+  &__label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-secondary-700);
+    margin-bottom: 0.5rem;
+  }
+
+  &__required {
+    color: var(--color-danger-500);
+    margin-left: 0.125rem;
+  }
+
+  // ===============================
+  // Input Wrapper
+  // ===============================
+
+  &__wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  // ===============================
+  // Input Field
+  // ===============================
+
+  &__field {
+    display: block;
+    width: 100%;
+    height: 2.75rem; // 44px minimum touch target
+    padding: 0.625rem 1rem;
+    font-size: 0.875rem;
+    font-family: inherit;
+    line-height: 1.5;
+    color: var(--color-secondary-900);
+    background: linear-gradient(180deg, #ffffff 0%, var(--color-secondary-50) 100%);
+    border: 2px solid var(--color-secondary-200);
+    border-radius: 0.75rem;
+    box-shadow:
+      0 1px 3px rgba(0, 0, 0, 0.05),
+      inset 0 1px 2px rgba(0, 0, 0, 0.02);
+    transition: all 0.2s ease;
+
+    &::placeholder {
+      color: var(--color-secondary-400);
+    }
+
+    &:hover:not(:disabled):not(:focus) {
+      border-color: var(--color-primary-300);
+      background: #ffffff;
+      box-shadow:
+        0 2px 4px rgba(99, 102, 241, 0.08),
+        inset 0 1px 2px rgba(0, 0, 0, 0.02);
+    }
+
+    &:focus {
+      outline: none;
+      border-color: var(--color-primary-500);
+      background: #ffffff;
+      box-shadow:
+        0 0 0 4px rgba(99, 102, 241, 0.15),
+        0 2px 6px rgba(99, 102, 241, 0.12);
+    }
+
+    &:disabled {
+      background: var(--color-secondary-100);
+      color: var(--color-secondary-500);
+      cursor: not-allowed;
+      border-color: var(--color-secondary-200);
+    }
+
+    &:read-only:not(:disabled) {
+      background: linear-gradient(180deg, var(--color-secondary-50) 0%, var(--color-secondary-100) 100%);
+    }
+
+    // Remove number input spinners
+    &[type='number'] {
+      -moz-appearance: textfield;
+
+      &::-webkit-outer-spin-button,
+      &::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+    }
+
+    // Search input clear button
+    &[type='search'] {
+      &::-webkit-search-cancel-button {
+        -webkit-appearance: none;
+      }
+    }
+  }
+
+  // ===============================
+  // Icons
+  // ===============================
+
+  &__icon {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-primary-400);
+    pointer-events: none;
+    transition: color 0.2s ease;
+
+    &--prefix {
+      left: 0.875rem;
+    }
+
+    &--suffix {
+      right: 0.875rem;
+    }
+  }
+
+  // Icon color changes on focus
+  &:focus-within &__icon {
+    color: var(--color-primary-600);
+  }
+
+  // ===============================
+  // Icon Padding Adjustments
+  // ===============================
+
+  &--has-prefix &__field {
+    padding-left: 2.75rem;
+  }
+
+  &--has-suffix &__field {
+    padding-right: 2.75rem;
+  }
+
+  // ===============================
+  // Helper Text
+  // ===============================
+
+  &__hint {
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--color-secondary-500);
+  }
+
+  &__error {
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--color-danger-600);
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+
+    &::before {
+      content: '';
+      display: inline-block;
+      width: 0.375rem;
+      height: 0.375rem;
+      background: var(--color-danger-500);
+      border-radius: 50%;
+    }
+  }
+
+  // ===============================
+  // Error State
+  // ===============================
+
+  &--error &__field {
+    border-color: var(--color-danger-400);
+    background: linear-gradient(180deg, #ffffff 0%, var(--color-danger-50) 100%);
+
+    &:hover:not(:disabled):not(:focus) {
+      border-color: var(--color-danger-500);
+    }
+
+    &:focus {
+      border-color: var(--color-danger-500);
+      box-shadow:
+        0 0 0 4px rgba(244, 63, 94, 0.15),
+        0 2px 6px rgba(244, 63, 94, 0.12);
+    }
+  }
+
+  &--error &__icon {
+    color: var(--color-danger-500);
+  }
+
+  // ===============================
+  // Disabled State
+  // ===============================
+
+  &--disabled &__label {
+    color: var(--color-secondary-400);
+  }
+
+  &--disabled &__icon {
+    color: var(--color-secondary-300);
+  }
+}
+
+// ===============================
+// Mobile Touch Target
+// ===============================
+
+@media (max-width: 768px) {
+  .msls-input__field {
+    min-height: 2.75rem; // Ensure 44px touch target on mobile
+  }
+}

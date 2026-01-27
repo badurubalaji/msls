@@ -1,0 +1,235 @@
+// MSLS Button Component Styles
+// Uses CSS custom properties from theme.css for consistent theming
+
+.msls-button {
+  // Base styles
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-weight: 500;
+  border-radius: 0.5rem;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  position: relative;
+  white-space: nowrap;
+  user-select: none;
+
+  // Focus styles for accessibility (WCAG 2.1 AA)
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.4);
+  }
+
+  // ===============================
+  // Size Variants
+  // ===============================
+
+  &--sm {
+    height: 2rem;
+    min-width: 2rem;
+    padding: 0 0.75rem;
+    font-size: 0.75rem;
+  }
+
+  &--md {
+    height: 2.5rem;
+    min-width: 2.5rem;
+    padding: 0 1rem;
+    font-size: 0.875rem;
+  }
+
+  &--lg {
+    height: 3rem;
+    min-width: 3rem;
+    padding: 0 1.5rem;
+    font-size: 1rem;
+  }
+
+  // ===============================
+  // Color Variants
+  // ===============================
+
+  // Primary variant
+  &--primary {
+    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+    color: white;
+    box-shadow: 0 2px 4px rgba(79, 70, 229, 0.3);
+
+    &:hover:not(:disabled) {
+      background: linear-gradient(135deg, #4338ca 0%, #4f46e5 100%);
+      box-shadow: 0 4px 8px rgba(79, 70, 229, 0.4);
+      transform: translateY(-1px);
+    }
+
+    &:active:not(:disabled) {
+      background: linear-gradient(135deg, #3730a3 0%, #4338ca 100%);
+      transform: translateY(0);
+    }
+  }
+
+  // Secondary variant
+  &--secondary {
+    background: linear-gradient(135deg, var(--color-secondary-50) 0%, var(--color-secondary-100) 100%);
+    color: var(--color-secondary-800);
+    border-color: var(--color-secondary-200);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+
+    &:hover:not(:disabled) {
+      background: linear-gradient(135deg, var(--color-secondary-100) 0%, var(--color-secondary-200) 100%);
+      border-color: var(--color-secondary-300);
+      transform: translateY(-1px);
+    }
+
+    &:active:not(:disabled) {
+      background: var(--color-secondary-200);
+      transform: translateY(0);
+    }
+  }
+
+  // Danger variant
+  &--danger {
+    background: linear-gradient(135deg, var(--color-danger-500) 0%, var(--color-danger-600) 100%);
+    color: white;
+    box-shadow: 0 2px 4px rgba(244, 63, 94, 0.3);
+
+    &:hover:not(:disabled) {
+      background: linear-gradient(135deg, var(--color-danger-600) 0%, var(--color-danger-700) 100%);
+      box-shadow: 0 4px 8px rgba(244, 63, 94, 0.4);
+      transform: translateY(-1px);
+    }
+
+    &:active:not(:disabled) {
+      background: linear-gradient(135deg, var(--color-danger-700) 0%, var(--color-danger-800) 100%);
+      transform: translateY(0);
+    }
+
+    &:focus-visible {
+      box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.4);
+    }
+  }
+
+  // Ghost variant
+  &--ghost {
+    background-color: transparent;
+    color: var(--color-secondary-600);
+    border: none;
+
+    &:hover:not(:disabled) {
+      background: linear-gradient(135deg, var(--color-secondary-50) 0%, var(--color-secondary-100) 100%);
+      color: var(--color-primary-600);
+    }
+
+    &:active:not(:disabled) {
+      background-color: var(--color-secondary-200);
+    }
+  }
+
+  // Outline variant
+  &--outline {
+    background-color: transparent;
+    border-color: var(--color-primary-500);
+    color: var(--color-primary-600);
+
+    &:hover:not(:disabled) {
+      background: linear-gradient(135deg, var(--color-primary-50) 0%, rgba(99, 102, 241, 0.08) 100%);
+      border-color: var(--color-primary-600);
+      box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2);
+      transform: translateY(-1px);
+    }
+
+    &:active:not(:disabled) {
+      background-color: var(--color-primary-100);
+      transform: translateY(0);
+    }
+  }
+
+  // ===============================
+  // State Modifiers
+  // ===============================
+
+  &--disabled,
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  &--loading {
+    cursor: wait;
+    pointer-events: none;
+  }
+
+  &--full-width {
+    width: 100%;
+  }
+
+  &--icon-only {
+    padding: 0;
+
+    &.msls-button--sm {
+      width: 2rem;
+    }
+
+    &.msls-button--md {
+      width: 2.5rem;
+    }
+
+    &.msls-button--lg {
+      width: 3rem;
+    }
+  }
+
+  // ===============================
+  // Inner Elements
+  // ===============================
+
+  &__content {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    &--hidden {
+      visibility: hidden;
+    }
+  }
+
+  &__spinner {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__spinner-icon {
+    width: 1.25em;
+    height: 1.25em;
+    animation: msls-button-spin 1s linear infinite;
+  }
+
+  &__spinner-track {
+    opacity: 0.25;
+  }
+
+  &__spinner-head {
+    opacity: 1;
+  }
+}
+
+// Spinner animation
+@keyframes msls-button-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// Reduced motion preference
+@media (prefers-reduced-motion: reduce) {
+  .msls-button__spinner-icon {
+    animation: none;
+  }
+}

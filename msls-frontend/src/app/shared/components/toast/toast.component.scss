@@ -1,0 +1,133 @@
+.toast-container {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 24rem;
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  pointer-events: auto;
+  animation: toast-slide-in 0.3s ease-out;
+
+  // Variant styles
+  &--success {
+    background-color: var(--color-success-50);
+    border: 1px solid var(--color-success-200);
+
+    .toast__icon {
+      color: var(--color-success-500);
+    }
+
+    .toast__message {
+      color: var(--color-success-800);
+    }
+  }
+
+  &--error {
+    background-color: var(--color-danger-50);
+    border: 1px solid var(--color-danger-200);
+
+    .toast__icon {
+      color: var(--color-danger-500);
+    }
+
+    .toast__message {
+      color: var(--color-danger-800);
+    }
+  }
+
+  &--warning {
+    background-color: var(--color-warning-50);
+    border: 1px solid var(--color-warning-200);
+
+    .toast__icon {
+      color: var(--color-warning-500);
+    }
+
+    .toast__message {
+      color: var(--color-warning-800);
+    }
+  }
+
+  &--info {
+    background-color: var(--color-primary-50);
+    border: 1px solid var(--color-primary-200);
+
+    .toast__icon {
+      color: var(--color-primary-500);
+    }
+
+    .toast__message {
+      color: var(--color-primary-800);
+    }
+  }
+
+  &__icon {
+    flex-shrink: 0;
+
+    svg {
+      width: 1.25rem;
+      height: 1.25rem;
+    }
+  }
+
+  &__message {
+    flex: 1;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+  }
+
+  &__dismiss {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    padding: 0;
+    background: none;
+    border: none;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    color: inherit;
+    opacity: 0.5;
+    transition: opacity 0.15s ease-in-out;
+
+    &:hover {
+      opacity: 1;
+    }
+
+    &:focus {
+      outline: none;
+      box-shadow: 0 0 0 2px var(--color-primary-500);
+    }
+
+    svg {
+      width: 1rem;
+      height: 1rem;
+    }
+  }
+}
+
+@keyframes toast-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}

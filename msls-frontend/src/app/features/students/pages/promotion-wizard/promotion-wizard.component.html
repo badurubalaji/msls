@@ -1,0 +1,551 @@
+<!-- Promotion Wizard -->
+<div class="promotion-wizard">
+  <!-- Header -->
+  <div class="wizard-header">
+    <div class="header-left">
+      <button type="button" class="back-btn" (click)="goBack()">
+        <i class="fa-solid fa-arrow-left"></i>
+      </button>
+      <div class="header-info">
+        <h1>Student Promotion</h1>
+        <p class="subtitle">Process year-end promotions and retentions</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stepper -->
+  <div class="stepper">
+    @for (step of steps; track $index) {
+      <div
+        class="step"
+        [class.active]="currentStep() === $index"
+        [class.completed]="currentStep() > $index"
+        [class.clickable]="$index <= currentStep()"
+        (click)="goToStep($index)"
+      >
+        <div class="step-indicator">
+          @if (currentStep() > $index) {
+            <i class="fa-solid fa-check"></i>
+          } @else {
+            <i class="fa-solid" [ngClass]="step.icon"></i>
+          }
+        </div>
+        <span class="step-label">{{ step.label }}</span>
+      </div>
+      @if ($index < steps.length - 1) {
+        <div class="step-connector" [class.active]="currentStep() > $index"></div>
+      }
+    }
+  </div>
+
+  <!-- Content -->
+  <div class="wizard-content">
+    @if (loading()) {
+      <div class="loading-state">
+        <msls-spinner size="lg" />
+        <p>Processing...</p>
+      </div>
+    } @else {
+      <!-- Step 0: Select Source -->
+      @if (currentStep() === 0) {
+        <div class="step-content">
+          <div class="content-card">
+            <h2>Select Source Class</h2>
+            <p class="card-description">
+              Choose the academic year and class to process promotions from.
+            </p>
+
+            <div class="form-grid">
+              <!-- From Academic Year -->
+              <div class="form-group">
+                <label>From Academic Year <span class="required">*</span></label>
+                <select
+                  [value]="sourceForm().fromAcademicYearId"
+                  (change)="onSourceFormChange('fromAcademicYearId', $any($event.target).value)"
+                >
+                  <option value="">Select academic year...</option>
+                  @for (year of academicYears(); track year.id) {
+                    <option [value]="year.id">{{ year.name }}</option>
+                  }
+                </select>
+              </div>
+
+              <!-- To Academic Year -->
+              <div class="form-group">
+                <label>To Academic Year <span class="required">*</span></label>
+                <select
+                  [value]="sourceForm().toAcademicYearId"
+                  (change)="onSourceFormChange('toAcademicYearId', $any($event.target).value)"
+                >
+                  <option value="">Select academic year...</option>
+                  @for (year of academicYears(); track year.id) {
+                    <option [value]="year.id">{{ year.name }}</option>
+                  }
+                </select>
+              </div>
+
+              <!-- From Class -->
+              <div class="form-group">
+                <label>From Class <span class="required">*</span></label>
+                <select
+                  [value]="sourceForm().fromClassId"
+                  (change)="onSourceFormChange('fromClassId', $any($event.target).value)"
+                >
+                  <option value="">Select class...</option>
+                  @for (cls of classes(); track cls.id) {
+                    <option [value]="cls.id">{{ cls.name }}</option>
+                  }
+                </select>
+              </div>
+
+              <!-- From Section (Optional) -->
+              <div class="form-group">
+                <label>From Section <span class="optional">(Optional)</span></label>
+                <select
+                  [value]="sourceForm().fromSectionId"
+                  (change)="onSourceFormChange('fromSectionId', $any($event.target).value)"
+                >
+                  <option value="">All sections</option>
+                  @for (section of sections(); track section.id) {
+                    <option [value]="section.id">{{ section.name }}</option>
+                  }
+                </select>
+              </div>
+
+              <!-- To Class -->
+              <div class="form-group">
+                <label>Promote To Class</label>
+                <select
+                  [value]="sourceForm().toClassId"
+                  (change)="onSourceFormChange('toClassId', $any($event.target).value)"
+                >
+                  <option value="">Select target class...</option>
+                  @for (cls of classes(); track cls.id) {
+                    <option [value]="cls.id">{{ cls.name }}</option>
+                  }
+                </select>
+              </div>
+
+              <!-- Notes -->
+              <div class="form-group form-group--full">
+                <label>Notes <span class="optional">(Optional)</span></label>
+                <textarea
+                  rows="2"
+                  [value]="sourceForm().notes"
+                  (input)="onSourceFormChange('notes', $any($event.target).value)"
+                  placeholder="Add any notes about this promotion batch..."
+                ></textarea>
+              </div>
+            </div>
+          </div>
+
+          <div class="step-actions">
+            <button type="button" class="btn-secondary" (click)="goBack()">Cancel</button>
+            <button
+              type="button"
+              class="btn-primary"
+              [disabled]="!canProceedFromSource()"
+              (click)="createBatch()"
+            >
+              <i class="fa-solid fa-arrow-right"></i>
+              Continue
+            </button>
+          </div>
+        </div>
+      }
+
+      <!-- Step 1: Review Students -->
+      @if (currentStep() === 1) {
+        <div class="step-content">
+          <!-- Summary Cards -->
+          @if (summary(); as s) {
+            <div class="summary-cards">
+              <div class="summary-card">
+                <div class="summary-value">{{ s.totalStudents }}</div>
+                <div class="summary-label">Total Students</div>
+              </div>
+              <div class="summary-card summary-card--pending">
+                <div class="summary-value">{{ s.pendingCount }}</div>
+                <div class="summary-label">Pending</div>
+              </div>
+              <div class="summary-card summary-card--promote">
+                <div class="summary-value">{{ s.promoteCount }}</div>
+                <div class="summary-label">Promote</div>
+              </div>
+              <div class="summary-card summary-card--retain">
+                <div class="summary-value">{{ s.retainCount }}</div>
+                <div class="summary-label">Retain</div>
+              </div>
+              <div class="summary-card summary-card--transfer">
+                <div class="summary-value">{{ s.transferCount }}</div>
+                <div class="summary-label">Transfer</div>
+              </div>
+            </div>
+          }
+
+          <!-- Bulk Actions -->
+          <div class="bulk-actions">
+            <button type="button" class="btn-outline" (click)="autoDecide()">
+              <i class="fa-solid fa-magic"></i>
+              Auto-Decide
+            </button>
+            <div class="bulk-separator"></div>
+            <span class="bulk-label">Bulk:</span>
+            <button
+              type="button"
+              class="btn-sm btn-success"
+              [disabled]="!someSelected()"
+              (click)="bulkSetDecision('promote')"
+            >
+              Promote
+            </button>
+            <button
+              type="button"
+              class="btn-sm btn-warning"
+              [disabled]="!someSelected()"
+              (click)="bulkSetDecision('retain')"
+            >
+              Retain
+            </button>
+            <button
+              type="button"
+              class="btn-sm btn-danger"
+              [disabled]="!someSelected()"
+              (click)="bulkSetDecision('transfer')"
+            >
+              Transfer
+            </button>
+          </div>
+
+          <!-- Records Table -->
+          <div class="records-table-wrapper">
+            <table class="records-table">
+              <thead>
+                <tr>
+                  <th class="col-checkbox">
+                    <input
+                      type="checkbox"
+                      [checked]="allSelected()"
+                      [indeterminate]="someSelected() && !allSelected()"
+                      (change)="toggleSelectAll()"
+                    />
+                  </th>
+                  <th class="col-student">Student</th>
+                  <th class="col-metrics">Attendance</th>
+                  <th class="col-metrics">Marks</th>
+                  <th class="col-decision">Decision</th>
+                  <th class="col-reason">Reason</th>
+                  <th class="col-actions">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (record of records(); track trackByRecordId($index, record)) {
+                  <tr [class.selected]="isRecordSelected(record.id)">
+                    <td class="col-checkbox">
+                      <input
+                        type="checkbox"
+                        [checked]="isRecordSelected(record.id)"
+                        (change)="toggleRecord(record.id)"
+                      />
+                    </td>
+                    <td class="col-student">
+                      <div class="student-cell">
+                        <msls-avatar
+                          [src]="record.student?.photoUrl || ''"
+                          [name]="record.student?.fullName || ''"
+                          size="sm"
+                        />
+                        <div class="student-info">
+                          <span class="student-name">{{ record.student?.fullName }}</span>
+                          <span class="student-admission">{{ record.student?.admissionNumber }}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="col-metrics">
+                      @if (record.attendancePct !== undefined && record.attendancePct !== null) {
+                        <span [class.low]="record.attendancePct < 75">
+                          {{ record.attendancePct | number:'1.1-1' }}%
+                        </span>
+                      } @else {
+                        <span class="na">N/A</span>
+                      }
+                    </td>
+                    <td class="col-metrics">
+                      @if (record.overallMarksPct !== undefined && record.overallMarksPct !== null) {
+                        <span [class.low]="record.overallMarksPct < 33">
+                          {{ record.overallMarksPct | number:'1.1-1' }}%
+                        </span>
+                      } @else {
+                        <span class="na">N/A</span>
+                      }
+                    </td>
+                    <td class="col-decision">
+                      <msls-badge [variant]="getDecisionVariant(record.decision)" size="sm">
+                        {{ getDecisionLabel(record.decision) }}
+                      </msls-badge>
+                      @if (record.autoDecided) {
+                        <span class="auto-badge" title="Auto-decided">
+                          <i class="fa-solid fa-robot"></i>
+                        </span>
+                      }
+                    </td>
+                    <td class="col-reason">
+                      <span class="reason-text" [title]="record.decisionReason || ''">
+                        {{ record.decisionReason || '—' }}
+                      </span>
+                    </td>
+                    <td class="col-actions">
+                      <div class="action-buttons">
+                        <button
+                          type="button"
+                          class="action-btn action-btn--promote"
+                          [class.active]="record.decision === 'promote'"
+                          title="Promote"
+                          (click)="setRecordDecision(record, 'promote')"
+                        >
+                          <i class="fa-solid fa-arrow-up"></i>
+                        </button>
+                        <button
+                          type="button"
+                          class="action-btn action-btn--retain"
+                          [class.active]="record.decision === 'retain'"
+                          title="Retain"
+                          (click)="setRecordDecision(record, 'retain')"
+                        >
+                          <i class="fa-solid fa-minus"></i>
+                        </button>
+                        <button
+                          type="button"
+                          class="action-btn action-btn--transfer"
+                          [class.active]="record.decision === 'transfer'"
+                          title="Transfer"
+                          (click)="setRecordDecision(record, 'transfer')"
+                        >
+                          <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="7" class="empty-row">
+                      <div class="empty-state">
+                        <i class="fa-solid fa-users"></i>
+                        <p>No students found in this class/section</p>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <div class="step-actions">
+            <button type="button" class="btn-secondary" (click)="prevStep()">
+              <i class="fa-solid fa-arrow-left"></i>
+              Back
+            </button>
+            <button
+              type="button"
+              class="btn-primary"
+              [disabled]="!canProceedFromReview()"
+              (click)="nextStep()"
+            >
+              <i class="fa-solid fa-arrow-right"></i>
+              Continue
+            </button>
+          </div>
+
+          @if (!canProceedFromReview()) {
+            <p class="step-warning">
+              <i class="fa-solid fa-exclamation-triangle"></i>
+              Please decide all pending students before continuing.
+            </p>
+          }
+        </div>
+      }
+
+      <!-- Step 2: Assign Sections -->
+      @if (currentStep() === 2) {
+        <div class="step-content">
+          <div class="content-card">
+            <h2>Assign Target Sections</h2>
+            <p class="card-description">
+              Optionally assign sections for promoted and retained students.
+            </p>
+
+            <div class="section-assignment">
+              @for (record of records(); track trackByRecordId($index, record)) {
+                @if (record.decision !== 'transfer') {
+                  <div class="assignment-row">
+                    <div class="student-cell">
+                      <msls-avatar
+                        [src]="record.student?.photoUrl || ''"
+                        [name]="record.student?.fullName || ''"
+                        size="sm"
+                      />
+                      <div class="student-info">
+                        <span class="student-name">{{ record.student?.fullName }}</span>
+                        <msls-badge [variant]="getDecisionVariant(record.decision)" size="sm">
+                          {{ getDecisionLabel(record.decision) }}
+                        </msls-badge>
+                      </div>
+                    </div>
+                    <div class="section-select">
+                      <select
+                        [value]="record.toSectionId || ''"
+                        (change)="setRecordSection(record, $any($event.target).value)"
+                      >
+                        <option value="">No section</option>
+                        @for (section of sections(); track section.id) {
+                          <option [value]="section.id">{{ section.name }}</option>
+                        }
+                      </select>
+                    </div>
+                  </div>
+                }
+              }
+            </div>
+          </div>
+
+          <div class="step-actions">
+            <button type="button" class="btn-secondary" (click)="prevStep()">
+              <i class="fa-solid fa-arrow-left"></i>
+              Back
+            </button>
+            <button type="button" class="btn-primary" (click)="nextStep()">
+              <i class="fa-solid fa-arrow-right"></i>
+              Continue
+            </button>
+          </div>
+        </div>
+      }
+
+      <!-- Step 3: Confirm -->
+      @if (currentStep() === 3) {
+        <div class="step-content">
+          <div class="content-card">
+            <h2>Confirm Promotion</h2>
+            <p class="card-description">
+              Review the summary and confirm to process the promotions.
+            </p>
+
+            @if (batch(); as b) {
+              <div class="confirm-summary">
+                <div class="summary-section">
+                  <h3>Source</h3>
+                  <dl>
+                    <dt>From Year:</dt>
+                    <dd>{{ b.fromAcademicYear?.name }}</dd>
+                    <dt>From Class:</dt>
+                    <dd>{{ fromClass()?.name || b.fromClassId }}</dd>
+                  </dl>
+                </div>
+
+                <div class="summary-section">
+                  <h3>Target</h3>
+                  <dl>
+                    <dt>To Year:</dt>
+                    <dd>{{ b.toAcademicYear?.name }}</dd>
+                    <dt>To Class:</dt>
+                    <dd>{{ targetClass()?.name || b.toClassId || 'Same as source' }}</dd>
+                  </dl>
+                </div>
+
+                <div class="summary-section">
+                  <h3>Students</h3>
+                  <dl>
+                    <dt>Total:</dt>
+                    <dd>{{ b.totalStudents }}</dd>
+                    <dt>Promote:</dt>
+                    <dd class="text-success">{{ summary()?.promoteCount || 0 }}</dd>
+                    <dt>Retain:</dt>
+                    <dd class="text-warning">{{ summary()?.retainCount || 0 }}</dd>
+                    <dt>Transfer:</dt>
+                    <dd class="text-danger">{{ summary()?.transferCount || 0 }}</dd>
+                  </dl>
+                </div>
+              </div>
+
+              <div class="options-section">
+                <label class="checkbox-label">
+                  <input
+                    type="checkbox"
+                    [checked]="generateRollNumbers()"
+                    (change)="generateRollNumbers.set($any($event.target).checked)"
+                  />
+                  <span>Generate sequential roll numbers</span>
+                </label>
+              </div>
+
+              <div class="warning-box">
+                <i class="fa-solid fa-exclamation-triangle"></i>
+                <div>
+                  <strong>Warning:</strong> This action will create new enrollments for the target
+                  academic year and mark current enrollments as completed. This cannot be undone.
+                </div>
+              </div>
+            }
+          </div>
+
+          <div class="step-actions">
+            <button type="button" class="btn-secondary" (click)="prevStep()">
+              <i class="fa-solid fa-arrow-left"></i>
+              Back
+            </button>
+            <button type="button" class="btn-primary btn-confirm" (click)="processBatch()">
+              <i class="fa-solid fa-check"></i>
+              Process Promotions
+            </button>
+          </div>
+        </div>
+      }
+
+      <!-- Step 4: Complete -->
+      @if (currentStep() === 4) {
+        <div class="step-content">
+          <div class="content-card content-card--success">
+            <div class="success-icon">
+              <i class="fa-solid fa-check-circle"></i>
+            </div>
+            <h2>Promotion Complete!</h2>
+            <p class="card-description">
+              All students have been processed successfully.
+            </p>
+
+            @if (batch(); as b) {
+              <div class="final-summary">
+                <div class="summary-stat">
+                  <span class="stat-value text-success">{{ b.promotedCount }}</span>
+                  <span class="stat-label">Promoted</span>
+                </div>
+                <div class="summary-stat">
+                  <span class="stat-value text-warning">{{ b.retainedCount }}</span>
+                  <span class="stat-label">Retained</span>
+                </div>
+                <div class="summary-stat">
+                  <span class="stat-value text-danger">{{ b.transferredCount }}</span>
+                  <span class="stat-label">Transferred</span>
+                </div>
+              </div>
+            }
+
+            <div class="complete-actions">
+              <button type="button" class="btn-outline" (click)="viewReport()">
+                <i class="fa-solid fa-file-download"></i>
+                Download Report
+              </button>
+              <button type="button" class="btn-primary" (click)="startNewBatch()">
+                <i class="fa-solid fa-plus"></i>
+                Process Another Class
+              </button>
+              <button type="button" class="btn-secondary" (click)="goBack()">
+                Back to Students
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+    }
+  </div>
+</div>

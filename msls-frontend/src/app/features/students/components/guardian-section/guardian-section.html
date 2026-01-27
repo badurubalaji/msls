@@ -1,0 +1,384 @@
+<!-- Guardian Section -->
+<div class="guardian-section">
+  <!-- Guardians Card -->
+  <div class="detail-card">
+    <div class="detail-card__header">
+      <div class="detail-card__icon detail-card__icon--guardian">
+        <i class="fa-solid fa-users"></i>
+      </div>
+      <h2 class="detail-card__title">Guardians</h2>
+      <button type="button" class="add-btn" (click)="openGuardianForm()">
+        <i class="fa-solid fa-plus"></i>
+        Add Guardian
+      </button>
+    </div>
+    <div class="detail-card__body">
+      @if (guardiansLoading()) {
+        <div class="loading-state">
+          <msls-spinner size="md" />
+        </div>
+      } @else if (guardians().length === 0) {
+        <div class="empty-state">
+          <i class="fa-solid fa-user-plus"></i>
+          <p>No guardians added yet</p>
+          <button type="button" class="btn-link" (click)="openGuardianForm()">
+            Add first guardian
+          </button>
+        </div>
+      } @else {
+        <div class="guardian-list">
+          @for (guardian of guardians(); track guardian.id) {
+            <div class="guardian-card" [class.guardian-card--primary]="guardian.isPrimary">
+              <div class="guardian-card__header">
+                <div class="guardian-card__avatar">
+                  {{ guardian.firstName[0] }}{{ guardian.lastName[0] }}
+                </div>
+                <div class="guardian-card__info">
+                  <h3>
+                    {{ guardian.fullName }}
+                    @if (guardian.isPrimary) {
+                      <msls-badge variant="success" size="sm">Primary</msls-badge>
+                    }
+                  </h3>
+                  <p class="relation">{{ getRelationLabel(guardian.relation) }}</p>
+                </div>
+                <div class="guardian-card__actions">
+                  @if (!guardian.isPrimary) {
+                    <button
+                      type="button"
+                      class="action-btn action-btn--star"
+                      title="Set as primary"
+                      (click)="setPrimary(guardian)"
+                    >
+                      <i class="fa-regular fa-star"></i>
+                    </button>
+                  }
+                  <button
+                    type="button"
+                    class="action-btn action-btn--edit"
+                    title="Edit"
+                    (click)="openGuardianForm(guardian)"
+                  >
+                    <i class="fa-solid fa-pen"></i>
+                  </button>
+                  <button
+                    type="button"
+                    class="action-btn action-btn--delete"
+                    title="Delete"
+                    (click)="deleteGuardian(guardian)"
+                  >
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="guardian-card__body">
+                <div class="contact-item">
+                  <i class="fa-solid fa-phone"></i>
+                  <span>{{ guardian.phone }}</span>
+                </div>
+                @if (guardian.email) {
+                  <div class="contact-item">
+                    <i class="fa-solid fa-envelope"></i>
+                    <span>{{ guardian.email }}</span>
+                  </div>
+                }
+                @if (guardian.occupation) {
+                  <div class="contact-item">
+                    <i class="fa-solid fa-briefcase"></i>
+                    <span>{{ guardian.occupation }}</span>
+                  </div>
+                }
+                @if (guardian.hasPortalAccess) {
+                  <div class="contact-item contact-item--badge">
+                    <i class="fa-solid fa-key"></i>
+                    <span>Portal Access Enabled</span>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Emergency Contacts Card -->
+  <div class="detail-card">
+    <div class="detail-card__header">
+      <div class="detail-card__icon detail-card__icon--emergency">
+        <i class="fa-solid fa-phone-volume"></i>
+      </div>
+      <h2 class="detail-card__title">Emergency Contacts</h2>
+      <button type="button" class="add-btn" (click)="openContactForm()">
+        <i class="fa-solid fa-plus"></i>
+        Add Contact
+      </button>
+    </div>
+    <div class="detail-card__body">
+      @if (contactsLoading()) {
+        <div class="loading-state">
+          <msls-spinner size="md" />
+        </div>
+      } @else if (emergencyContacts().length === 0) {
+        <div class="empty-state">
+          <i class="fa-solid fa-phone-slash"></i>
+          <p>No emergency contacts added yet</p>
+          <button type="button" class="btn-link" (click)="openContactForm()">
+            Add first contact
+          </button>
+        </div>
+      } @else {
+        <div class="contact-list">
+          @for (contact of emergencyContacts(); track contact.id) {
+            <div class="contact-card">
+              <div class="contact-card__priority">
+                {{ contact.priority }}
+              </div>
+              <div class="contact-card__info">
+                <h4>{{ contact.name }}</h4>
+                <p class="relation">{{ contact.relation }}</p>
+              </div>
+              <div class="contact-card__phone">
+                <div class="phone-item">
+                  <i class="fa-solid fa-phone"></i>
+                  {{ contact.phone }}
+                </div>
+                @if (contact.alternatePhone) {
+                  <div class="phone-item phone-item--alt">
+                    <i class="fa-solid fa-phone"></i>
+                    {{ contact.alternatePhone }}
+                  </div>
+                }
+              </div>
+              <div class="contact-card__actions">
+                <button
+                  type="button"
+                  class="action-btn action-btn--edit"
+                  title="Edit"
+                  (click)="openContactForm(contact)"
+                >
+                  <i class="fa-solid fa-pen"></i>
+                </button>
+                <button
+                  type="button"
+                  class="action-btn action-btn--delete"
+                  title="Delete"
+                  (click)="deleteContact(contact)"
+                >
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+</div>
+
+<!-- Guardian Form Modal -->
+@if (showGuardianForm()) {
+  <div class="modal-overlay" (click)="closeGuardianForm()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal__header">
+        <h3>{{ editingGuardian() ? 'Edit Guardian' : 'Add Guardian' }}</h3>
+        <button type="button" class="modal__close" (click)="closeGuardianForm()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="modal__body">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="relation">Relation <span class="required">*</span></label>
+            <select
+              id="relation"
+              [value]="guardianForm().relation"
+              (change)="onGuardianRelationChange($event)"
+            >
+              @for (opt of relationOptions; track opt.value) {
+                <option [value]="opt.value">{{ opt.label }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="firstName">First Name <span class="required">*</span></label>
+            <input
+              type="text"
+              id="firstName"
+              [value]="guardianForm().firstName"
+              (input)="onGuardianFirstNameInput($event)"
+              placeholder="Enter first name"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="lastName">Last Name <span class="required">*</span></label>
+            <input
+              type="text"
+              id="lastName"
+              [value]="guardianForm().lastName"
+              (input)="onGuardianLastNameInput($event)"
+              placeholder="Enter last name"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="phone">Phone <span class="required">*</span></label>
+            <input
+              type="tel"
+              id="phone"
+              [value]="guardianForm().phone"
+              (input)="onGuardianPhoneInput($event)"
+              placeholder="Enter phone number"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input
+              type="email"
+              id="email"
+              [value]="guardianForm().email || ''"
+              (input)="onGuardianEmailInput($event)"
+              placeholder="Enter email address"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="occupation">Occupation</label>
+            <input
+              type="text"
+              id="occupation"
+              [value]="guardianForm().occupation || ''"
+              (input)="onGuardianOccupationInput($event)"
+              placeholder="Enter occupation"
+            />
+          </div>
+
+          <div class="form-group form-group--full">
+            <div class="checkbox-group">
+              <label class="checkbox-label">
+                <input
+                  type="checkbox"
+                  [checked]="guardianForm().isPrimary"
+                  (change)="onGuardianPrimaryChange($event)"
+                />
+                <span>Set as primary guardian</span>
+              </label>
+              <label class="checkbox-label">
+                <input
+                  type="checkbox"
+                  [checked]="guardianForm().hasPortalAccess"
+                  (change)="onGuardianPortalAccessChange($event)"
+                />
+                <span>Enable parent portal access</span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal__footer">
+        <button type="button" class="btn-secondary" (click)="closeGuardianForm()">
+          Cancel
+        </button>
+        <button type="button" class="btn-primary" (click)="saveGuardian()">
+          {{ editingGuardian() ? 'Update' : 'Add' }} Guardian
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Emergency Contact Form Modal -->
+@if (showContactForm()) {
+  <div class="modal-overlay" (click)="closeContactForm()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal__header">
+        <h3>{{ editingContact() ? 'Edit Emergency Contact' : 'Add Emergency Contact' }}</h3>
+        <button type="button" class="modal__close" (click)="closeContactForm()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="modal__body">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="contactName">Name <span class="required">*</span></label>
+            <input
+              type="text"
+              id="contactName"
+              [value]="contactForm().name"
+              (input)="onContactNameInput($event)"
+              placeholder="Enter full name"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="contactRelation">Relation <span class="required">*</span></label>
+            <input
+              type="text"
+              id="contactRelation"
+              [value]="contactForm().relation"
+              (input)="onContactRelationInput($event)"
+              placeholder="e.g., Neighbor, Family Friend"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="contactPhone">Phone <span class="required">*</span></label>
+            <input
+              type="tel"
+              id="contactPhone"
+              [value]="contactForm().phone"
+              (input)="onContactPhoneInput($event)"
+              placeholder="Enter phone number"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="alternatePhone">Alternate Phone</label>
+            <input
+              type="tel"
+              id="alternatePhone"
+              [value]="contactForm().alternatePhone || ''"
+              (input)="onContactAlternatePhoneInput($event)"
+              placeholder="Enter alternate number"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="priority">Priority (1-5)</label>
+            <input
+              type="number"
+              id="priority"
+              min="1"
+              max="5"
+              [value]="contactForm().priority || ''"
+              (input)="onContactPriorityInput($event)"
+              placeholder="1 = highest priority"
+            />
+          </div>
+
+          <div class="form-group form-group--full">
+            <label for="notes">Notes</label>
+            <textarea
+              id="notes"
+              rows="2"
+              [value]="contactForm().notes || ''"
+              (input)="onContactNotesInput($event)"
+              placeholder="Any additional notes..."
+            ></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal__footer">
+        <button type="button" class="btn-secondary" (click)="closeContactForm()">
+          Cancel
+        </button>
+        <button type="button" class="btn-primary" (click)="saveContact()">
+          {{ editingContact() ? 'Update' : 'Add' }} Contact
+        </button>
+      </div>
+    </div>
+  </div>
+}

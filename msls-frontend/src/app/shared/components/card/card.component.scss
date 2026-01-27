@@ -1,0 +1,140 @@
+.card {
+  background: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%);
+  border-radius: 1rem;
+  overflow: hidden;
+  position: relative;
+
+  // Subtle top accent line
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--color-primary-400), var(--color-primary-600), var(--color-accent-500));
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  // Default variant
+  &--default {
+    box-shadow:
+      0 0 0 1px rgba(99, 102, 241, 0.06),
+      0 1px 3px rgba(0, 0, 0, 0.04),
+      0 4px 12px rgba(99, 102, 241, 0.08);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+
+    &::before {
+      opacity: 1;
+    }
+  }
+
+  // Elevated variant - stronger shadow with glow
+  &--elevated {
+    box-shadow:
+      0 4px 6px -1px rgba(99, 102, 241, 0.1),
+      0 10px 25px -5px rgba(99, 102, 241, 0.15),
+      0 20px 40px -10px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(99, 102, 241, 0.1);
+
+    &::before {
+      opacity: 1;
+    }
+  }
+
+  // Outlined variant - clean border with accent
+  &--outlined {
+    box-shadow: none;
+    border: 2px solid var(--color-secondary-200);
+    background: white;
+
+    &:hover {
+      border-color: var(--color-primary-300);
+    }
+  }
+
+  // Padding variants
+  &--padding-none {
+    .card__header,
+    .card__body,
+    .card__footer {
+      padding: 0;
+    }
+  }
+
+  &--padding-sm {
+    .card__header,
+    .card__body,
+    .card__footer {
+      padding: 0.75rem 1rem;
+    }
+  }
+
+  &--padding-md {
+    .card__header,
+    .card__body,
+    .card__footer {
+      padding: 1.25rem 1.5rem;
+    }
+  }
+
+  &--padding-lg {
+    .card__header,
+    .card__body,
+    .card__footer {
+      padding: 1.75rem 2rem;
+    }
+  }
+
+  // Hoverable state
+  &--hoverable {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    &:hover {
+      box-shadow:
+        0 8px 16px -4px rgba(99, 102, 241, 0.15),
+        0 20px 40px -8px rgba(99, 102, 241, 0.2);
+      transform: translateY(-4px);
+      border-color: rgba(99, 102, 241, 0.2);
+    }
+  }
+
+  // Clickable state
+  &--clickable {
+    cursor: pointer;
+    user-select: none;
+
+    &:active {
+      transform: translateY(0);
+    }
+  }
+
+  // Card sections
+  &__header {
+    border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+    font-weight: 600;
+    color: var(--color-secondary-900);
+    background: linear-gradient(180deg, rgba(248, 250, 252, 0.5) 0%, transparent 100%);
+
+    &:empty {
+      display: none;
+      border-bottom: none;
+    }
+  }
+
+  &__body {
+    color: var(--color-secondary-700);
+    line-height: 1.6;
+  }
+
+  &__footer {
+    border-top: 1px solid rgba(226, 232, 240, 0.8);
+    background: linear-gradient(180deg, var(--color-secondary-50) 0%, rgba(241, 245, 249, 0.5) 100%);
+
+    &:empty {
+      display: none;
+      border-top: none;
+    }
+  }
+}

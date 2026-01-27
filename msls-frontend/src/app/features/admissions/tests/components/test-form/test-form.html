@@ -1,0 +1,259 @@
+<div class="test-form">
+  <!-- Form Header -->
+  <div class="form-header">
+    <div class="form-header__icon" [class.form-header__icon--edit]="isEditMode()">
+      <i [class]="isEditMode() ? 'fa-solid fa-pen-to-square' : 'fa-solid fa-plus'"></i>
+    </div>
+    <div class="form-header__text">
+      <h2 class="form-header__title">{{ formTitle() }}</h2>
+      <p class="form-header__subtitle">
+        @if (isEditMode()) {
+          Update the test details below
+        } @else {
+          Fill in the details to schedule a new entrance test
+        }
+      </p>
+    </div>
+  </div>
+
+  <!-- Session Selection -->
+  <div class="form-group">
+    <label class="form-label">Admission Session <span class="required">*</span></label>
+    @if (loadingSessions()) {
+      <div class="loading-sessions">
+        <i class="fa-solid fa-spinner fa-spin"></i>
+        Loading sessions...
+      </div>
+    } @else if (sessions().length === 0) {
+      <div class="no-sessions">
+        <i class="fa-solid fa-exclamation-triangle"></i>
+        No admission sessions available. Please create one first.
+      </div>
+    } @else {
+      <select
+        class="form-input"
+        [class.form-input--error]="errors()['sessionId']"
+        [ngModel]="formData().sessionId"
+        (ngModelChange)="updateField('sessionId', $event)"
+      >
+        <option value="">Select a session</option>
+        @for (session of sessions(); track session.id) {
+          <option [value]="session.id">
+            {{ session.name }}
+            @if (session.status === 'open') {
+              (Open)
+            } @else if (session.status === 'closed') {
+              (Closed)
+            } @else {
+              ({{ session.status }})
+            }
+          </option>
+        }
+      </select>
+    }
+    @if (errors()['sessionId']) {
+      <span class="form-error">{{ errors()['sessionId'] }}</span>
+    }
+  </div>
+
+  <!-- Test Name -->
+  <div class="form-group">
+    <label class="form-label">Test Name <span class="required">*</span></label>
+    <input
+      type="text"
+      class="form-input"
+      [class.form-input--error]="errors()['testName']"
+      placeholder="e.g., Class 1 Entrance Test - Batch 1"
+      [ngModel]="formData().testName"
+      (ngModelChange)="updateField('testName', $event)"
+    />
+    @if (errors()['testName']) {
+      <span class="form-error">{{ errors()['testName'] }}</span>
+    }
+  </div>
+
+  <!-- Date and Time Row -->
+  <div class="form-row">
+    <div class="form-group">
+      <label class="form-label">Test Date <span class="required">*</span></label>
+      <input
+        type="date"
+        class="form-input"
+        [class.form-input--error]="errors()['testDate']"
+        [ngModel]="formData().testDate"
+        (ngModelChange)="updateField('testDate', $event)"
+      />
+      @if (errors()['testDate']) {
+        <span class="form-error">{{ errors()['testDate'] }}</span>
+      }
+    </div>
+    <div class="form-group">
+      <label class="form-label">Start Time <span class="required">*</span></label>
+      <input
+        type="time"
+        class="form-input"
+        [class.form-input--error]="errors()['startTime']"
+        [ngModel]="formData().startTime"
+        (ngModelChange)="updateField('startTime', $event)"
+      />
+      @if (errors()['startTime']) {
+        <span class="form-error">{{ errors()['startTime'] }}</span>
+      }
+    </div>
+    <div class="form-group">
+      <label class="form-label">Duration (minutes) <span class="required">*</span></label>
+      <input
+        type="number"
+        class="form-input"
+        [class.form-input--error]="errors()['durationMinutes']"
+        min="15"
+        max="480"
+        [ngModel]="formData().durationMinutes"
+        (ngModelChange)="updateField('durationMinutes', $event)"
+      />
+      @if (errors()['durationMinutes']) {
+        <span class="form-error">{{ errors()['durationMinutes'] }}</span>
+      }
+    </div>
+  </div>
+
+  <!-- Venue and Max Candidates -->
+  <div class="form-row">
+    <div class="form-group form-group--lg">
+      <label class="form-label">Venue</label>
+      <input
+        type="text"
+        class="form-input"
+        placeholder="e.g., Main Hall - Block A"
+        [ngModel]="formData().venue"
+        (ngModelChange)="updateField('venue', $event)"
+      />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Max Candidates <span class="required">*</span></label>
+      <input
+        type="number"
+        class="form-input"
+        [class.form-input--error]="errors()['maxCandidates']"
+        min="1"
+        [ngModel]="formData().maxCandidates"
+        (ngModelChange)="updateField('maxCandidates', $event)"
+      />
+      @if (errors()['maxCandidates']) {
+        <span class="form-error">{{ errors()['maxCandidates'] }}</span>
+      }
+    </div>
+  </div>
+
+  <!-- Classes Selection -->
+  <div class="form-group">
+    <label class="form-label">Classes <span class="required">*</span></label>
+    <div class="classes-grid">
+      @for (className of availableClasses; track className) {
+        <button
+          type="button"
+          class="class-btn"
+          [class.class-btn--selected]="isClassSelected(className)"
+          (click)="toggleClass(className)"
+        >
+          {{ className }}
+        </button>
+      }
+    </div>
+    @if (errors()['classNames']) {
+      <span class="form-error">{{ errors()['classNames'] }}</span>
+    }
+  </div>
+
+  <!-- Subjects -->
+  <div class="form-group">
+    <label class="form-label">Subjects <span class="required">*</span></label>
+    <div class="subjects-section">
+      <!-- Add Subject Form -->
+      <div class="add-subject">
+        <input
+          type="text"
+          class="form-input"
+          placeholder="Subject name"
+          [ngModel]="newSubjectName()"
+          (ngModelChange)="newSubjectName.set($event)"
+          (keyup.enter)="addSubject()"
+        />
+        <input
+          type="number"
+          class="form-input form-input--sm"
+          placeholder="Max marks"
+          min="1"
+          [ngModel]="newSubjectMaxMarks()"
+          (ngModelChange)="newSubjectMaxMarks.set($event)"
+        />
+        <button
+          type="button"
+          class="btn btn-secondary"
+          (click)="addSubject()"
+          [disabled]="!newSubjectName()"
+        >
+          <i class="fa-solid fa-plus"></i>
+          Add
+        </button>
+      </div>
+
+      <!-- Subjects List -->
+      @if (formData().subjects.length > 0) {
+        <div class="subjects-list">
+          @for (subject of formData().subjects; track subject.name; let i = $index) {
+            <div class="subject-item">
+              <span class="subject-name">{{ subject.name }}</span>
+              <span class="subject-marks">{{ subject.maxMarks }} marks</span>
+              <button
+                type="button"
+                class="remove-btn"
+                (click)="removeSubject(i)"
+                title="Remove subject"
+              >
+                <i class="fa-solid fa-times"></i>
+              </button>
+            </div>
+          }
+          <div class="subjects-total">
+            <span>Total Marks:</span>
+            <span class="total-value">{{ getTotalMaxMarks() }}</span>
+          </div>
+        </div>
+      }
+    </div>
+    @if (errors()['subjects']) {
+      <span class="form-error">{{ errors()['subjects'] }}</span>
+    }
+  </div>
+
+  <!-- Actions -->
+  <div class="form-actions">
+    <button type="button" class="btn btn-secondary" (click)="onCancel()">
+      Cancel
+    </button>
+    <button
+      type="button"
+      class="btn btn-primary"
+      [disabled]="loading || loadingSessions()"
+      (click)="onSubmit()"
+    >
+      @if (loading) {
+        <div class="btn-spinner"></div>
+        @if (isEditMode()) {
+          Updating...
+        } @else {
+          Creating...
+        }
+      } @else {
+        @if (isEditMode()) {
+          <i class="fa-solid fa-save"></i>
+          Update Test
+        } @else {
+          <i class="fa-solid fa-plus"></i>
+          Create Test
+        }
+      }
+    </button>
+  </div>
+</div>

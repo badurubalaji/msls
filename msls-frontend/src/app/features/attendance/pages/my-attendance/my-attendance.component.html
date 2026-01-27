@@ -1,0 +1,491 @@
+<!-- My Attendance Page -->
+<div class="my-attendance-page">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-content">
+      <div class="header-left">
+        <div class="header-icon">
+          <i class="fa-solid fa-clock"></i>
+        </div>
+        <div class="header-text">
+          <h1>My Attendance</h1>
+          <p>Track your attendance records and request regularizations</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button type="button" class="regularization-btn" (click)="openRegularizationModal()">
+          <i class="fa-solid fa-file-pen"></i>
+          <span>Request Regularization</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <!-- Error State -->
+    @if (error()) {
+      <div class="error-card">
+        <div class="error-card__icon">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <div class="error-card__content">
+          <h3>Unable to load attendance</h3>
+          <p>{{ error() }}</p>
+        </div>
+        <div class="error-card__action">
+          <button type="button" class="retry-btn" (click)="loadData()">
+            <i class="fa-solid fa-arrows-rotate"></i>
+            Retry
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- Check In/Out Card -->
+    <div class="checkin-card">
+      <div class="checkin-card__header">
+        <div class="checkin-card__date">
+          <i class="fa-solid fa-calendar-day"></i>
+          <span>{{ currentDate }}</span>
+        </div>
+        <div class="checkin-card__time">
+          {{ currentTime }}
+        </div>
+      </div>
+
+      <div class="checkin-card__body">
+        <div class="checkin-card__status">
+          @if (todayAttendance()?.status === 'checked_in' || todayAttendance()?.status === 'checked_out') {
+            <div class="status-badge status-badge--checked-in">
+              <i class="fa-solid fa-check-circle"></i>
+              <span>{{ todayAttendance()?.status === 'checked_out' ? 'Checked Out' : 'Checked In' }}</span>
+            </div>
+          } @else {
+            <div class="status-badge status-badge--not-checked">
+              <i class="fa-solid fa-clock"></i>
+              <span>Not Checked In</span>
+            </div>
+          }
+        </div>
+
+        <div class="checkin-card__times">
+          <div class="time-block">
+            <div class="time-block__icon time-block__icon--in">
+              <i class="fa-solid fa-right-to-bracket"></i>
+            </div>
+            <div class="time-block__info">
+              <span class="time-block__label">Check In</span>
+              <span class="time-block__value">{{ formatTime(todayAttendance()?.attendance?.checkInTime) || '--:--' }}</span>
+            </div>
+          </div>
+
+          <div class="time-divider">
+            <i class="fa-solid fa-arrow-right"></i>
+          </div>
+
+          <div class="time-block">
+            <div class="time-block__icon time-block__icon--out">
+              <i class="fa-solid fa-right-from-bracket"></i>
+            </div>
+            <div class="time-block__info">
+              <span class="time-block__label">Check Out</span>
+              <span class="time-block__value">{{ formatTime(todayAttendance()?.attendance?.checkOutTime) || '--:--' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="checkin-card__working">
+          <div class="working-hours">
+            <i class="fa-solid fa-hourglass-half"></i>
+            <span>Working Hours:</span>
+            <strong>{{ getWorkingHours() }}</strong>
+          </div>
+          <div class="working-type">
+            <span>Type:</span>
+            <strong>{{ todayAttendance()?.attendance?.halfDayType === 'first_half' || todayAttendance()?.attendance?.halfDayType === 'second_half' ? 'Half Day' : 'Full Day' }}</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="checkin-card__footer">
+        @if (todayAttendance()?.canCheckIn) {
+          <button type="button" class="action-btn action-btn--checkin" (click)="checkIn()" [disabled]="loading()">
+            <i class="fa-solid fa-right-to-bracket"></i>
+            <span>Check In Now</span>
+          </button>
+        } @else if (todayAttendance()?.canCheckOut) {
+          <button type="button" class="action-btn action-btn--checkout" (click)="checkOut()" [disabled]="loading()">
+            <i class="fa-solid fa-right-from-bracket"></i>
+            <span>Check Out</span>
+          </button>
+        } @else if (todayAttendance()?.status === 'checked_out') {
+          <div class="completed-badge">
+            <i class="fa-solid fa-circle-check"></i>
+            <span>Day Completed</span>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Monthly Summary -->
+    <div class="section-header">
+      <div class="section-header__left">
+        <i class="fa-solid fa-chart-pie"></i>
+        <h2>Monthly Summary</h2>
+      </div>
+      <div class="month-nav">
+        <button type="button" class="month-nav__btn" (click)="previousMonth()">
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+        <span class="month-nav__label">{{ getMonthLabel() }}</span>
+        <button type="button" class="month-nav__btn" (click)="nextMonth()">
+          <i class="fa-solid fa-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <!-- Present Days -->
+      <div class="stat-card stat-card--present">
+        <div class="stat-card__header">
+          <div>
+            <p class="stat-card__value">{{ summary()?.presentDays || 0 }}</p>
+            <p class="stat-card__label">Present</p>
+          </div>
+          <div class="stat-card__icon">
+            <i class="fa-solid fa-check"></i>
+          </div>
+        </div>
+        <div class="stat-card__footer">Days present this month</div>
+      </div>
+
+      <!-- Absent Days -->
+      <div class="stat-card stat-card--absent">
+        <div class="stat-card__header">
+          <div>
+            <p class="stat-card__value">{{ summary()?.absentDays || 0 }}</p>
+            <p class="stat-card__label">Absent</p>
+          </div>
+          <div class="stat-card__icon">
+            <i class="fa-solid fa-xmark"></i>
+          </div>
+        </div>
+        <div class="stat-card__footer">Days absent</div>
+      </div>
+
+      <!-- Half Days -->
+      <div class="stat-card stat-card--halfday">
+        <div class="stat-card__header">
+          <div>
+            <p class="stat-card__value">{{ summary()?.halfDays || 0 }}</p>
+            <p class="stat-card__label">Half Days</p>
+          </div>
+          <div class="stat-card__icon">
+            <i class="fa-solid fa-circle-half-stroke"></i>
+          </div>
+        </div>
+        <div class="stat-card__footer">Half day attendance</div>
+      </div>
+
+      <!-- Late Days -->
+      <div class="stat-card stat-card--late">
+        <div class="stat-card__header">
+          <div>
+            <p class="stat-card__value">{{ summary()?.lateDays || 0 }}</p>
+            <p class="stat-card__label">Late</p>
+          </div>
+          <div class="stat-card__icon">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+          </div>
+        </div>
+        <div class="stat-card__footer">Arrived late</div>
+      </div>
+
+      <!-- Leaves -->
+      <div class="stat-card stat-card--leave">
+        <div class="stat-card__header">
+          <div>
+            <p class="stat-card__value">{{ summary()?.leaveDays || 0 }}</p>
+            <p class="stat-card__label">Leaves</p>
+          </div>
+          <div class="stat-card__icon">
+            <i class="fa-solid fa-calendar-xmark"></i>
+          </div>
+        </div>
+        <div class="stat-card__footer">Approved leaves</div>
+      </div>
+
+      <!-- Holidays -->
+      <div class="stat-card stat-card--holiday">
+        <div class="stat-card__header">
+          <div>
+            <p class="stat-card__value">{{ summary()?.holidayDays || 0 }}</p>
+            <p class="stat-card__label">Holidays</p>
+          </div>
+          <div class="stat-card__icon">
+            <i class="fa-solid fa-umbrella-beach"></i>
+          </div>
+        </div>
+        <div class="stat-card__footer">Public holidays</div>
+      </div>
+
+      <!-- Working Days -->
+      <div class="stat-card stat-card--working">
+        <div class="stat-card__header">
+          <div>
+            <p class="stat-card__value">{{ summary()?.totalDays || 0 }}</p>
+            <p class="stat-card__label">Working Days</p>
+          </div>
+          <div class="stat-card__icon">
+            <i class="fa-solid fa-briefcase"></i>
+          </div>
+        </div>
+        <div class="stat-card__footer">Total in month</div>
+      </div>
+
+      <!-- Late Minutes -->
+      <div class="stat-card stat-card--hours">
+        <div class="stat-card__header">
+          <div>
+            <p class="stat-card__value">{{ summary()?.totalLateMinutes || 0 }}</p>
+            <p class="stat-card__label">Late Min</p>
+          </div>
+          <div class="stat-card__icon">
+            <i class="fa-solid fa-hourglass"></i>
+          </div>
+        </div>
+        <div class="stat-card__footer">Total late minutes</div>
+      </div>
+    </div>
+
+    <!-- Attendance History -->
+    <div class="section-header">
+      <div class="section-header__left">
+        <i class="fa-solid fa-list"></i>
+        <h2>Attendance History</h2>
+      </div>
+    </div>
+
+    <!-- Filters Card -->
+    <div class="filters-card">
+      <div class="filters-row">
+        <div class="date-input">
+          <i class="fa-solid fa-calendar date-input__icon"></i>
+          <input
+            type="date"
+            [value]="dateFrom()"
+            (change)="onDateFromChange($event)"
+            placeholder="From Date"
+          />
+        </div>
+
+        <div class="date-input">
+          <i class="fa-solid fa-calendar date-input__icon"></i>
+          <input
+            type="date"
+            [value]="dateTo()"
+            (change)="onDateToChange($event)"
+            placeholder="To Date"
+          />
+        </div>
+
+        <div class="filter-actions">
+          @if (dateFrom() || dateTo()) {
+            <button type="button" class="clear-btn" (click)="clearFilters()">
+              <i class="fa-solid fa-xmark"></i>
+              <span>Clear</span>
+            </button>
+          }
+          <button
+            type="button"
+            class="refresh-btn"
+            [class.spinning]="loading()"
+            (click)="loadData()"
+          >
+            <i class="fa-solid fa-arrows-rotate"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Attendance Table (Desktop) -->
+    <div class="attendance-table-container">
+      <div class="attendance-table">
+        @if (loading() && attendanceList().length === 0) {
+          <div class="attendance-table__body">
+            @for (i of [1, 2, 3, 4, 5]; track i) {
+              <div class="skeleton-row">
+                <div class="skeleton-row__text skeleton-row__text--medium"></div>
+                <div class="skeleton-row__text skeleton-row__text--short"></div>
+                <div class="skeleton-row__text skeleton-row__text--short"></div>
+                <div class="skeleton-row__badge"></div>
+                <div class="skeleton-row__text skeleton-row__text--short"></div>
+              </div>
+            }
+          </div>
+        } @else if (attendanceList().length > 0) {
+          <!-- Table Header -->
+          <div class="attendance-table__header">
+            <span>Date</span>
+            <span>Check In</span>
+            <span>Check Out</span>
+            <span>Status</span>
+            <span>Working Hours</span>
+          </div>
+
+          <!-- Table Body -->
+          <div class="attendance-table__body">
+            @for (record of attendanceList(); track record.id) {
+              <div class="attendance-table__row">
+                <div class="attendance-table__date">
+                  <i class="fa-solid fa-calendar-day"></i>
+                  <span>{{ formatDate(record.attendanceDate) }}</span>
+                </div>
+                <div class="attendance-table__time">
+                  {{ record.checkInTime || '--:--' }}
+                </div>
+                <div class="attendance-table__time">
+                  {{ record.checkOutTime || '--:--' }}
+                </div>
+                <div>
+                  <span class="status-pill" [class]="'status-pill--' + record.status">
+                    {{ getStatusLabel(record.status) }}
+                  </span>
+                </div>
+                <div class="attendance-table__hours">
+                  {{ calculateWorkingHours(record.checkInTime, record.checkOutTime) }}
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Attendance Cards (Mobile) -->
+    <div class="attendance-cards">
+      @if (loading() && attendanceList().length === 0) {
+        @for (i of [1, 2, 3]; track i) {
+          <div class="skeleton-card">
+            <div class="skeleton-card__header"></div>
+            <div class="skeleton-card__content">
+              <div class="skeleton-card__title"></div>
+              <div class="skeleton-card__subtitle"></div>
+            </div>
+          </div>
+        }
+      }
+
+      @for (record of attendanceList(); track record.id) {
+        <div class="attendance-card">
+          <div class="attendance-card__header">
+            <span class="attendance-card__date">{{ formatDate(record.attendanceDate) }}</span>
+            <span class="status-pill" [class]="'status-pill--' + record.status">
+              {{ getStatusLabel(record.status) }}
+            </span>
+          </div>
+          <div class="attendance-card__body">
+            <div class="attendance-card__time-group">
+              <div class="time-info">
+                <i class="fa-solid fa-right-to-bracket"></i>
+                <span>{{ record.checkInTime || '--:--' }}</span>
+              </div>
+              <i class="fa-solid fa-arrow-right time-arrow"></i>
+              <div class="time-info">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span>{{ record.checkOutTime || '--:--' }}</span>
+              </div>
+            </div>
+            <div class="attendance-card__hours">
+              <i class="fa-solid fa-hourglass-half"></i>
+              <span>{{ calculateWorkingHours(record.checkInTime, record.checkOutTime) }}</span>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Empty State -->
+    @if (!loading() && attendanceList().length === 0) {
+      <div class="empty-state">
+        <div class="empty-state__icon">
+          <div class="empty-state__icon-bg"></div>
+          <div class="empty-state__icon-inner">
+            <i class="fa-solid fa-calendar-xmark"></i>
+          </div>
+        </div>
+        <h2>No attendance records</h2>
+        <p>No attendance records found for the selected period.</p>
+      </div>
+    }
+
+    <!-- Load More -->
+    @if (hasMore() && !loading()) {
+      <div class="load-more">
+        <button type="button" class="load-more-btn" (click)="loadMore()">
+          <i class="fa-solid fa-arrow-down"></i>
+          Load More Records
+        </button>
+      </div>
+    }
+
+    <!-- Loading More -->
+    @if (loading() && attendanceList().length > 0) {
+      <div class="loading-more">
+        <div class="loading-more__spinner"></div>
+        <span>Loading more records...</span>
+      </div>
+    }
+  </div>
+</div>
+
+<!-- Regularization Modal -->
+@if (showRegularizationModal()) {
+  <div class="modal-overlay" (click)="closeRegularizationModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal__header">
+        <h3>
+          <i class="fa-solid fa-file-pen"></i>
+          Request Regularization
+        </h3>
+        <button type="button" class="modal__close" (click)="closeRegularizationModal()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="modal__body">
+        <div class="form-group">
+          <label>Date</label>
+          <input
+            type="date"
+            [(ngModel)]="regularizationDate"
+            class="form-input"
+          />
+        </div>
+        <div class="form-group">
+          <label>Reason</label>
+          <textarea
+            [(ngModel)]="regularizationReason"
+            class="form-textarea"
+            rows="4"
+            placeholder="Please provide the reason for regularization..."
+          ></textarea>
+        </div>
+      </div>
+      <div class="modal__footer">
+        <button type="button" class="btn btn--secondary" (click)="closeRegularizationModal()">
+          Cancel
+        </button>
+        <button
+          type="button"
+          class="btn btn--primary"
+          (click)="submitRegularization()"
+          [disabled]="!regularizationDate || !regularizationReason"
+        >
+          <i class="fa-solid fa-paper-plane"></i>
+          Submit Request
+        </button>
+      </div>
+    </div>
+  </div>
+}

@@ -1,0 +1,35 @@
+<!-- Header Container -->
+<header class="header">
+  <!-- Left Section: Mobile Menu & Branding -->
+  <div class="header__left">
+    <!-- Mobile Menu Toggle (visible only on mobile) -->
+    <button
+      type="button"
+      class="header__menu-btn"
+      (click)="toggleMobileSidebar()"
+      aria-label="Toggle navigation menu"
+    >
+      <msls-icon name="bars-3" size="md" />
+    </button>
+
+    <!-- Tenant/School Name -->
+    <div class="header__brand">
+      <h1 class="header__title">{{ tenantName() }}</h1>
+    </div>
+  </div>
+
+  <!-- Right Section: Actions & User Menu -->
+  <div class="header__right">
+    <!-- Notification Bell (placeholder for future) -->
+    <button
+      type="button"
+      class="header__action-btn"
+      aria-label="View notifications"
+    >
+      <msls-icon name="bell" size="md" />
+    </button>
+
+    <!-- User Menu -->
+    <msls-user-menu />
+  </div>
+</header>

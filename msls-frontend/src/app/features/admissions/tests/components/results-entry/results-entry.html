@@ -1,0 +1,267 @@
+<div class="results-page">
+  <div class="results-card">
+    <!-- Header -->
+    <div class="results-header">
+      <div class="results-header__left">
+        <button class="back-btn" (click)="goBack()">
+          <i class="fa-solid fa-arrow-left"></i>
+        </button>
+        <div>
+          <h1 class="results-header__title">
+            @if (test()) {
+              {{ test()!.testName }} - {{ isRegistrationsMode() ? 'Registrations' : 'Results' }}
+            } @else {
+              Loading...
+            }
+          </h1>
+          <p class="results-header__subtitle">
+            @if (isRegistrationsMode()) {
+              Manage candidate registrations for this test
+            } @else {
+              Enter and manage test results for registered candidates
+            }
+          </p>
+        </div>
+      </div>
+      <div class="results-header__right">
+        <div class="search-input">
+          <i class="fa-solid fa-magnifying-glass search-icon"></i>
+          <input
+            type="text"
+            placeholder="Search by name or roll number..."
+            [ngModel]="searchTerm()"
+            (ngModelChange)="searchTerm.set($event)"
+            class="search-field"
+          />
+        </div>
+        @if (isRegistrationsMode()) {
+          <button
+            class="btn btn-secondary"
+            [disabled]="stats().total === 0"
+            (click)="downloadHallTickets()"
+          >
+            <i class="fa-solid fa-id-card"></i>
+            Hall Tickets
+          </button>
+          <button
+            class="btn btn-primary"
+            (click)="openRegisterModal()"
+          >
+            <i class="fa-solid fa-user-plus"></i>
+            Register Candidate
+          </button>
+        } @else {
+          <button
+            class="btn btn-primary"
+            [disabled]="saving() || stats().pending === 0"
+            (click)="saveAllResults()"
+          >
+            @if (saving()) {
+              <div class="btn-spinner"></div>
+              Saving...
+            } @else {
+              <i class="fa-solid fa-save"></i>
+              Save All ({{ stats().pending }})
+            }
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- Stats Bar -->
+    @if (test()) {
+      <div class="stats-bar">
+        <div class="stat">
+          <span class="stat__value">{{ stats().total }}</span>
+          <span class="stat__label">Total Candidates</span>
+        </div>
+        <div class="stat stat--success">
+          <span class="stat__value">{{ stats().saved }}</span>
+          <span class="stat__label">Results Saved</span>
+        </div>
+        <div class="stat stat--warning">
+          <span class="stat__value">{{ stats().pending }}</span>
+          <span class="stat__label">Pending</span>
+        </div>
+        <div class="stat stat--info">
+          <span class="stat__value">{{ getMaxTotal() }}</span>
+          <span class="stat__label">Max Marks</span>
+        </div>
+      </div>
+    }
+
+    <!-- Loading State -->
+    @if (loading()) {
+      <div class="loading-container">
+        <div class="spinner"></div>
+        <p>Loading results data...</p>
+      </div>
+    } @else if (error()) {
+      <div class="error-container">
+        <i class="fa-solid fa-circle-exclamation"></i>
+        <p>{{ error() }}</p>
+        <button class="btn btn-secondary" (click)="goBack()">
+          Go Back
+        </button>
+      </div>
+    } @else {
+      <!-- Results Table -->
+      <div class="table-container">
+        <table class="results-table">
+          <thead>
+            <tr>
+              <th style="width: 100px;">Roll No.</th>
+              <th style="width: 180px;">Student Name</th>
+              @for (subject of test()?.subjects || []; track subject.name) {
+                <th style="width: 80px; text-align: center;">
+                  {{ subject.name }}<br/>
+                  <small>({{ subject.maxMarks }})</small>
+                </th>
+              }
+              <th style="width: 80px; text-align: center;">Total</th>
+              <th style="width: 70px; text-align: center;">%</th>
+              <th style="width: 90px; text-align: center;">Result</th>
+              <th style="width: 150px;">Remarks</th>
+              <th style="width: 80px; text-align: center;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (entry of filteredEntries(); track entry.registrationId) {
+              <tr [class.row--saved]="entry.saved">
+                <td class="roll-cell">{{ entry.rollNumber }}</td>
+                <td class="name-cell">{{ entry.studentName }}</td>
+                @for (subject of test()?.subjects || []; track subject.name) {
+                  <td class="marks-cell">
+                    <input
+                      type="number"
+                      class="marks-input"
+                      [min]="0"
+                      [max]="subject.maxMarks"
+                      [ngModel]="entry.marks[subject.name]"
+                      (ngModelChange)="updateMark(entry, subject.name, $event)"
+                    />
+                  </td>
+                }
+                <td class="total-cell">
+                  <span class="total-value">{{ getTotal(entry) }}</span>
+                  <span class="total-max">/ {{ getMaxTotal() }}</span>
+                </td>
+                <td class="percentage-cell">
+                  {{ getPercentage(entry) }}%
+                </td>
+                <td class="result-cell">
+                  <span class="result-badge" [class]="getResult(entry).class">
+                    {{ getResult(entry).verdict }}
+                  </span>
+                </td>
+                <td class="remarks-cell">
+                  <input
+                    type="text"
+                    class="remarks-input"
+                    placeholder="Optional"
+                    [ngModel]="entry.remarks"
+                    (ngModelChange)="updateRemarks(entry, $event)"
+                  />
+                </td>
+                <td class="actions-cell">
+                  @if (entry.saved) {
+                    <span class="saved-indicator">
+                      <i class="fa-solid fa-check-circle"></i>
+                    </span>
+                  } @else {
+                    <button
+                      class="save-btn"
+                      [disabled]="saving()"
+                      (click)="saveResult(entry)"
+                      title="Save result"
+                    >
+                      <i class="fa-solid fa-save"></i>
+                    </button>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td [attr.colspan]="(test()?.subjects?.length || 0) + 7" class="empty-cell">
+                  <div class="empty-state">
+                    <i class="fa-regular fa-clipboard"></i>
+                    <p>No candidates found</p>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+
+  <!-- Register Candidate Modal -->
+  <msls-modal
+    [isOpen]="showRegisterModal()"
+    title="Register Candidate"
+    size="md"
+    (closed)="closeRegisterModal()"
+  >
+    <ng-container modal-body>
+      <div class="register-form">
+        @if (loadingApplications()) {
+          <div class="loading-applications">
+            <div class="spinner"></div>
+            <p>Loading eligible applications...</p>
+          </div>
+        } @else if (availableApplications().length === 0) {
+          <div class="no-applications">
+            <i class="fa-solid fa-inbox"></i>
+            <p>No eligible applications found</p>
+            <small>Applications must have "Documents Verified" status and match the test class</small>
+          </div>
+        } @else {
+          <p class="register-info">
+            Select an application to register for <strong>{{ test()?.testName }}</strong>
+          </p>
+          <div class="applications-list">
+            @for (app of availableApplications(); track app.id) {
+              <div
+                class="application-option"
+                [class.selected]="selectedApplicationId() === app.id"
+                (click)="selectedApplicationId.set(app.id)"
+              >
+                <div class="application-option__radio">
+                  <input
+                    type="radio"
+                    [id]="'app-' + app.id"
+                    [value]="app.id"
+                    [checked]="selectedApplicationId() === app.id"
+                  />
+                </div>
+                <div class="application-option__details">
+                  <span class="app-number">{{ app.applicationNumber }}</span>
+                  <span class="app-name">{{ getFullName(app) }}</span>
+                  <span class="app-class">{{ app.classApplying }}</span>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </ng-container>
+    <ng-container modal-footer>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" (click)="closeRegisterModal()">Cancel</button>
+        <button
+          class="btn btn-primary"
+          [disabled]="!selectedApplicationId() || registering()"
+          (click)="registerCandidate()"
+        >
+          @if (registering()) {
+            <div class="btn-spinner"></div>
+            Registering...
+          } @else {
+            Register
+          }
+        </button>
+      </div>
+    </ng-container>
+  </msls-modal>
+</div>

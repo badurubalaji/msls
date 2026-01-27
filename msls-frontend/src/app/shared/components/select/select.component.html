@@ -1,0 +1,105 @@
+<!-- Select Container -->
+<div
+  class="select"
+  [class.select--open]="isOpen()"
+  [class.select--disabled]="isDisabled()"
+>
+  <!-- Trigger Button -->
+  <button
+    type="button"
+    class="select__trigger"
+    [disabled]="isDisabled()"
+    (click)="toggle()"
+    [attr.aria-expanded]="isOpen()"
+    aria-haspopup="listbox"
+  >
+    <!-- Selected Value Display -->
+    <span class="select__value" [class.select__value--placeholder]="!displayValue()">
+      {{ displayValue() || placeholder() }}
+    </span>
+
+    <!-- Clear Button (when value exists) -->
+    @if (displayValue() && !isDisabled()) {
+      <button
+        type="button"
+        class="select__clear"
+        (click)="clear($event)"
+        aria-label="Clear selection"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+        </svg>
+      </button>
+    }
+
+    <!-- Dropdown Arrow -->
+    <span class="select__arrow" [class.select__arrow--open]="isOpen()">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+      </svg>
+    </span>
+  </button>
+
+  <!-- Dropdown Panel -->
+  @if (isOpen()) {
+    <div class="select__dropdown" role="listbox">
+      <!-- Search Input -->
+      @if (searchable()) {
+        <div class="select__search">
+          <svg class="select__search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+          </svg>
+          <input
+            type="text"
+            class="select__search-input"
+            placeholder="Search..."
+            [value]="searchQuery()"
+            (input)="onSearchInput($event)"
+            (click)="$event.stopPropagation()"
+          />
+        </div>
+      }
+
+      <!-- Options List -->
+      <div class="select__options">
+        @for (option of filteredOptions(); track trackByValue($index, option)) {
+          <div
+            class="select__option"
+            [class.select__option--selected]="isSelected(option)"
+            [class.select__option--disabled]="option.disabled"
+            (click)="selectOption(option)"
+            role="option"
+            [attr.aria-selected]="isSelected(option)"
+          >
+            <!-- Checkbox for multiple -->
+            @if (multiple()) {
+              <span class="select__option-checkbox">
+                @if (isSelected(option)) {
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                  </svg>
+                }
+              </span>
+            }
+
+            <!-- Option Label -->
+            <span class="select__option-label">{{ option.label }}</span>
+
+            <!-- Check mark for single select -->
+            @if (!multiple() && isSelected(option)) {
+              <span class="select__option-check">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                </svg>
+              </span>
+            }
+          </div>
+        } @empty {
+          <div class="select__empty">
+            No options found
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>
