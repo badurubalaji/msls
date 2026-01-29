@@ -80,7 +80,7 @@ type StaffAttendance struct {
 	IsLate      bool `gorm:"not null;default:false" json:"isLate"`
 	LateMinutes int  `gorm:"default:0" json:"lateMinutes"`
 
-	HalfDayType HalfDayType `gorm:"type:varchar(20)" json:"halfDayType,omitempty"`
+	HalfDayType *HalfDayType `gorm:"type:varchar(20)" json:"halfDayType,omitempty"`
 	Remarks     string      `gorm:"type:text" json:"remarks,omitempty"`
 
 	MarkedBy *uuid.UUID `gorm:"type:uuid" json:"markedBy,omitempty"`

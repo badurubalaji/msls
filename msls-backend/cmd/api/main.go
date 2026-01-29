@@ -35,6 +35,7 @@ import (
 	profilehandler "msls-backend/internal/handlers/profile"
 	rbachandler "msls-backend/internal/handlers/rbac"
 	"msls-backend/internal/middleware"
+	"msls-backend/internal/modules/assignment"
 	"msls-backend/internal/modules/attendance"
 	"msls-backend/internal/modules/behavioral"
 	"msls-backend/internal/modules/bulk"
@@ -42,11 +43,15 @@ import (
 	"msls-backend/internal/modules/designation"
 	"msls-backend/internal/modules/document"
 	"msls-backend/internal/modules/enrollment"
+	"msls-backend/internal/modules/academic"
+	"msls-backend/internal/modules/timetable"
 	"msls-backend/internal/modules/guardian"
 	"msls-backend/internal/modules/health"
+	"msls-backend/internal/modules/payroll"
 	"msls-backend/internal/modules/promotion"
 	"msls-backend/internal/modules/salary"
 	"msls-backend/internal/modules/staff"
+	"msls-backend/internal/modules/staffdocument"
 	"msls-backend/internal/modules/student"
 	"msls-backend/internal/pkg/config"
 	"msls-backend/internal/pkg/database"
@@ -61,6 +66,7 @@ import (
 	"msls-backend/internal/services/featureflag"
 	"msls-backend/internal/services/profile"
 	"msls-backend/internal/services/rbac"
+	"msls-backend/internal/pkg/storage"
 )
 
 func main() {
@@ -317,6 +323,31 @@ func setupRouter(cfg *config.Config, log *logger.Logger, db *gorm.DB) *gin.Engin
 	salaryRepo := salary.NewRepository(db)
 	salaryService := salary.NewService(salaryRepo)
 
+	// Initialize payroll service
+	payrollRepo := payroll.NewRepository(db)
+	payrollService := payroll.NewService(payrollRepo)
+
+	// Initialize assignment service
+	assignmentService := assignment.NewService(db)
+
+	// Initialize academic service
+	academicRepo := academic.NewRepository(db)
+	academicService := academic.NewService(academicRepo)
+
+	// Initialize timetable service
+	timetableRepo := timetable.NewRepository(db)
+	timetableService := timetable.NewService(timetableRepo)
+
+	// Initialize file storage for staff documents
+	fileStorage, err := storage.NewLocalStorage("./uploads", "/uploads")
+	if err != nil {
+		log.Warn("failed to initialize file storage", zap.Error(err))
+	}
+
+	// Initialize staff document service
+	staffDocumentRepo := staffdocument.NewRepository(db)
+	staffDocumentService := staffdocument.NewService(staffDocumentRepo)
+
 	// Initialize handlers
 	authHandler := authhandler.NewHandler(authService)
 	otpHandler := authhandler.NewOTPHandler(otpService)
@@ -349,6 +380,11 @@ func setupRouter(cfg *config.Config, log *logger.Logger, db *gorm.DB) *gin.Engin
 	designationHandler := designation.NewHandler(designationService)
 	staffHandler := staff.NewHandler(staffService)
 	salaryHandler := salary.NewHandler(salaryService)
+	payrollHandler := payroll.NewHandler(payrollService)
+	assignmentHandler := assignment.NewHandler(assignmentService)
+	academicHandler := academic.NewHandler(academicService)
+	timetableHandler := timetable.NewHandler(timetableService)
+	staffDocumentHandler := staffdocument.NewHandler(staffDocumentService, fileStorage)
 
 	// Initialize attendance service (wrapping staff service for lookup)
 	attendanceService := attendance.NewService(db, staffService)
@@ -1295,6 +1331,26 @@ func setupRouter(cfg *config.Config, log *logger.Logger, db *gorm.DB) *gin.Engin
 			// Salary management routes
 			salaryHandler.RegisterRoutes(protected, middleware.AuthRequired(jwtService))
 			salaryHandler.RegisterStaffSalaryRoutes(staffRoutes)
+
+			// Payroll management routes
+			payrollHandler.RegisterRoutes(protected)
+			payrollHandler.RegisterStaffPayslipRoutes(staffRoutes)
+
+			// Academic structure routes (classes, sections, streams)
+			academicHandler.RegisterRoutes(protected)
+
+			// Timetable structure routes (shifts, day patterns, period slots)
+			timetableHandler.RegisterRoutes(protected)
+
+			// Teacher assignment routes
+			assignmentHandler.RegisterRoutes(protected)
+			assignmentHandler.RegisterStaffRoutes(staffRoutes)
+			assignmentHandler.RegisterClassRoutes(protected)
+
+			// Staff document management routes
+			staffDocumentHandler.RegisterDocumentTypeRoutes(protected)
+			staffDocumentHandler.RegisterStaffDocumentRoutes(staffRoutes)
+			staffDocumentHandler.RegisterGlobalDocumentRoutes(protected)
 		}
 
 		// Feature flags routes (authenticated - returns flags for current user)

@@ -161,6 +161,18 @@ export class ApiService {
   }
 
   /**
+   * Download a file as Blob
+   * @param endpoint - API endpoint
+   * @param options - Request options
+   */
+  getBlob(endpoint: string, options?: RequestOptions): Observable<Blob> {
+    return this.http.get(this.buildUrl(endpoint), {
+      ...this.buildOptions(options),
+      responseType: 'blob',
+    });
+  }
+
+  /**
    * Upload a file
    * @param endpoint - API endpoint
    * @param file - File to upload

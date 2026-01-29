@@ -988,6 +988,11 @@ func (h *Handler) UpdateSettings(c *gin.Context) {
 // Helper functions for response conversion
 
 func toAttendanceResponse(a *models.StaffAttendance) AttendanceResponse {
+	halfDayType := ""
+	if a.HalfDayType != nil {
+		halfDayType = string(*a.HalfDayType)
+	}
+
 	resp := AttendanceResponse{
 		ID:             a.ID.String(),
 		StaffID:        a.StaffID.String(),
@@ -995,7 +1000,7 @@ func toAttendanceResponse(a *models.StaffAttendance) AttendanceResponse {
 		Status:         string(a.Status),
 		IsLate:         a.IsLate,
 		LateMinutes:    a.LateMinutes,
-		HalfDayType:    string(a.HalfDayType),
+		HalfDayType:    halfDayType,
 		Remarks:        a.Remarks,
 		MarkedAt:       a.MarkedAt.Format(time.RFC3339),
 		CreatedAt:      a.CreatedAt.Format(time.RFC3339),

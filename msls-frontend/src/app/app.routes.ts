@@ -84,6 +84,27 @@ export const routes: Routes = [
           import('./features/finance/finance.routes').then((m) => m.FINANCE_ROUTES),
       },
 
+      // Payroll
+      {
+        path: 'payroll',
+        loadChildren: () =>
+          import('./features/payroll/payroll.routes').then((m) => m.PAYROLL_ROUTES),
+      },
+
+      // Teacher Assignments
+      {
+        path: 'assignments',
+        loadChildren: () =>
+          import('./features/assignment/assignment.routes').then((m) => m.ASSIGNMENT_ROUTES),
+      },
+
+      // Staff Documents
+      {
+        path: 'staff-documents',
+        loadChildren: () =>
+          import('./features/staff-document/staff-document.routes').then((m) => m.STAFF_DOCUMENT_ROUTES),
+      },
+
       // Admissions
       {
         path: 'admissions',

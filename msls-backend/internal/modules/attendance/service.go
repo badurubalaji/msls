@@ -80,13 +80,14 @@ func (s *Service) CheckIn(ctx context.Context, dto CheckInDTO) (*models.StaffAtt
 	}
 
 	status := models.AttendanceStatusPresent
-	var halfDayType models.HalfDayType
+	var halfDayType *models.HalfDayType
 	if dto.HalfDayType != "" {
 		if !HalfDayType(dto.HalfDayType).IsValid() {
 			return nil, ErrInvalidHalfDayType
 		}
 		status = models.AttendanceStatusHalfDay
-		halfDayType = models.HalfDayType(dto.HalfDayType)
+		hdType := models.HalfDayType(dto.HalfDayType)
+		halfDayType = &hdType
 	}
 
 	if existing != nil {
@@ -233,6 +234,13 @@ func (s *Service) MarkAttendance(ctx context.Context, dto MarkAttendanceDTO) (*m
 
 	now := time.Now()
 
+	// Convert half day type to pointer (nil if empty)
+	var halfDayTypePtr *models.HalfDayType
+	if dto.HalfDayType != "" {
+		hdType := models.HalfDayType(dto.HalfDayType)
+		halfDayTypePtr = &hdType
+	}
+
 	if existing != nil {
 		// Update existing record
 		existing.Status = models.AttendanceStatus(dto.Status)
@@ -240,7 +248,7 @@ func (s *Service) MarkAttendance(ctx context.Context, dto MarkAttendanceDTO) (*m
 		existing.CheckOutTime = dto.CheckOutTime
 		existing.IsLate = isLate
 		existing.LateMinutes = lateMinutes
-		existing.HalfDayType = models.HalfDayType(dto.HalfDayType)
+		existing.HalfDayType = halfDayTypePtr
 		existing.Remarks = dto.Remarks
 		existing.MarkedBy = dto.MarkedBy
 		existing.MarkedAt = now
@@ -262,7 +270,7 @@ func (s *Service) MarkAttendance(ctx context.Context, dto MarkAttendanceDTO) (*m
 		CheckOutTime:   dto.CheckOutTime,
 		IsLate:         isLate,
 		LateMinutes:    lateMinutes,
-		HalfDayType:    models.HalfDayType(dto.HalfDayType),
+		HalfDayType:    halfDayTypePtr,
 		Remarks:        dto.Remarks,
 		MarkedBy:       dto.MarkedBy,
 		MarkedAt:       now,

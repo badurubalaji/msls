@@ -43,7 +43,37 @@ export const NAV_ITEMS: NavItem[] = [
   {
     label: 'Staff',
     icon: 'briefcase',
-    route: '/staff',
+    children: [
+      {
+        label: 'Directory',
+        icon: 'users',
+        route: '/staff',
+      },
+      {
+        label: 'Documents',
+        icon: 'document-text',
+        route: '/staff-documents/compliance',
+        permissions: ['staff_document.view'],
+      },
+      {
+        label: 'Expiring Docs',
+        icon: 'exclamation-triangle',
+        route: '/staff-documents/expiring',
+        permissions: ['staff_document.view'],
+      },
+      {
+        label: 'Document Types',
+        icon: 'cog',
+        route: '/staff-documents/types',
+        permissions: ['staff_document.manage_types'],
+      },
+    ],
+  },
+  {
+    label: 'Payroll',
+    icon: 'banknotes',
+    route: '/payroll',
+    permissions: ['payroll.view'],
   },
   {
     label: 'Attendance',
@@ -74,14 +104,58 @@ export const NAV_ITEMS: NavItem[] = [
         route: '/academics/classes',
       },
       {
+        label: 'Sections',
+        icon: 'rectangle-stack',
+        route: '/academics/sections',
+      },
+      {
+        label: 'Streams',
+        icon: 'arrows-right-left',
+        route: '/academics/streams',
+      },
+      {
         label: 'Subjects',
         icon: 'book-open',
         route: '/academics/subjects',
       },
       {
+        label: 'Assignments',
+        icon: 'clipboard-document-list',
+        route: '/assignments',
+        permissions: ['assignment.view'],
+      },
+      {
+        label: 'Workload',
+        icon: 'chart-bar',
+        route: '/assignments/workload',
+        permissions: ['assignment.workload'],
+      },
+      {
         label: 'Timetable',
         icon: 'calendar',
         route: '/academics/timetable',
+        children: [
+          {
+            label: 'Overview',
+            icon: 'calendar',
+            route: '/academics/timetable',
+          },
+          {
+            label: 'Shifts',
+            icon: 'clock',
+            route: '/academics/timetable/shifts',
+          },
+          {
+            label: 'Day Patterns',
+            icon: 'calendar-days',
+            route: '/academics/timetable/day-patterns',
+          },
+          {
+            label: 'Period Slots',
+            icon: 'table-cells',
+            route: '/academics/timetable/period-slots',
+          },
+        ],
       },
     ],
   },

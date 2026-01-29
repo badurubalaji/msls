@@ -1,7 +1,7 @@
 # Story 5.4: Staff Attendance Marking
 
 **Epic:** 5 - Staff Management
-**Status:** in-progress
+**Status:** completed
 **Priority:** P1 (Core functionality)
 **Story Points:** 8
 
@@ -207,35 +207,35 @@ ON CONFLICT DO NOTHING;
 
 ### Backend Tasks
 
-- [ ] **BE-5.4.1**: Create database migration for staff_attendance tables
-- [ ] **BE-5.4.2**: Create attendance module (entity, dto, repository)
-- [ ] **BE-5.4.3**: Create attendance service with business logic
-- [ ] **BE-5.4.4**: Create attendance handler with all endpoints
-- [ ] **BE-5.4.5**: Create regularization service and handler
-- [ ] **BE-5.4.6**: Register routes in main.go
+- [x] **BE-5.4.1**: Create database migration for staff_attendance tables
+- [x] **BE-5.4.2**: Create attendance module (entity, dto, repository)
+- [x] **BE-5.4.3**: Create attendance service with business logic
+- [x] **BE-5.4.4**: Create attendance handler with all endpoints
+- [x] **BE-5.4.5**: Create regularization service and handler
+- [x] **BE-5.4.6**: Register routes in main.go
 
 ### Frontend Tasks
 
-- [ ] **FE-5.4.1**: Create attendance feature structure
-- [ ] **FE-5.4.2**: Create attendance service
-- [ ] **FE-5.4.3**: Create staff attendance dashboard (self-view)
-- [ ] **FE-5.4.4**: Create check-in/check-out component
-- [ ] **FE-5.4.5**: Create attendance calendar view
-- [ ] **FE-5.4.6**: Create regularization request form
-- [ ] **FE-5.4.7**: Create HR attendance management page
-- [ ] **FE-5.4.8**: Add routes and navigation
+- [x] **FE-5.4.1**: Create attendance feature structure
+- [x] **FE-5.4.2**: Create attendance service
+- [x] **FE-5.4.3**: Create staff attendance dashboard (self-view)
+- [x] **FE-5.4.4**: Create check-in/check-out component
+- [x] **FE-5.4.5**: Create attendance calendar view
+- [x] **FE-5.4.6**: Create regularization request form
+- [x] **FE-5.4.7**: Create HR attendance management page
+- [x] **FE-5.4.8**: Add routes and navigation
 
 ---
 
 ## Definition of Done
 
-- [ ] Staff can check-in and check-out
-- [ ] Late arrival is automatically flagged
-- [ ] Staff can view their attendance history
-- [ ] Staff can request regularization
-- [ ] HR can view all staff attendance
-- [ ] HR can mark attendance on behalf of staff
-- [ ] HR can approve/reject regularization requests
+- [x] Staff can check-in and check-out
+- [x] Late arrival is automatically flagged
+- [x] Staff can view their attendance history
+- [x] Staff can request regularization
+- [x] HR can view all staff attendance
+- [x] HR can mark attendance on behalf of staff
+- [x] HR can approve/reject regularization requests
 
 ---
 

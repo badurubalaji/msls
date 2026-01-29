@@ -4,6 +4,8 @@
  * Modern design matching the app's visual language
  */
 
+@use 'sass:color';
+
 // =============================================================================
 // VARIABLES
 // =============================================================================
@@ -764,7 +766,7 @@ $gray-900: #0f172a;
     color: #059669;
 
     &:hover {
-      background: darken($success-light, 5%);
+      background: color.adjust($success-light, $lightness: -5%);
     }
   }
 
@@ -773,7 +775,7 @@ $gray-900: #0f172a;
     color: #e11d48;
 
     &:hover {
-      background: darken($danger-light, 5%);
+      background: color.adjust($danger-light, $lightness: -5%);
     }
   }
 }
@@ -1367,7 +1369,7 @@ $gray-900: #0f172a;
     box-shadow: 0 4px 12px rgba($purple, 0.3);
 
     &:hover:not(:disabled) {
-      background: darken($purple, 10%);
+      background: color.adjust($purple, $lightness: -10%);
       box-shadow: 0 6px 16px rgba($purple, 0.4);
     }
 
