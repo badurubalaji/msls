@@ -254,8 +254,8 @@ func (r *Repository) DeleteSection(ctx context.Context, tenantID, id uuid.UUID) 
 // CountStudentsBySectionID returns the number of students in a section.
 func (r *Repository) CountStudentsBySectionID(ctx context.Context, sectionID uuid.UUID) (int64, error) {
 	var count int64
-	err := r.db.WithContext(ctx).Model(&models.Student{}).
-		Where("section_id = ?", sectionID).
+	err := r.db.WithContext(ctx).Table("student_enrollments").
+		Where("section_id = ? AND status = 'active'", sectionID).
 		Count(&count).Error
 	return count, err
 }
@@ -269,9 +269,9 @@ func (r *Repository) GetSectionStudentCounts(ctx context.Context, sectionIDs []u
 
 	var results []result
 	err := r.db.WithContext(ctx).
-		Model(&models.Student{}).
+		Table("student_enrollments").
 		Select("section_id, COUNT(*) as count").
-		Where("section_id IN ?", sectionIDs).
+		Where("section_id IN ? AND status = 'active'", sectionIDs).
 		Group("section_id").
 		Scan(&results).Error
 
