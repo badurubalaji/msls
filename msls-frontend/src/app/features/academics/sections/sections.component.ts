@@ -101,9 +101,9 @@ import { AcademicYear } from '../../admin/academic-years/academic-year.model';
                 <tr>
                   <td>
                     <div class="name-wrapper">
-                      <div class="section-icon">{{ section.name }}</div>
+                      <div class="section-icon">{{ section.code }}</div>
                       <div class="name-content">
-                        <span class="name">{{ section.code }}</span>
+                        <span class="name">{{ section.name }}</span>
                         @if (section.roomNumber) {
                           <span class="description">Room: {{ section.roomNumber }}</span>
                         }

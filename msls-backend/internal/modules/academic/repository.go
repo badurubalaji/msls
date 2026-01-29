@@ -61,6 +61,7 @@ func (r *Repository) ListClasses(ctx context.Context, filter ClassFilter) ([]mod
 	if err := query.
 		Preload("Branch").
 		Preload("Streams").
+		Preload("Sections").
 		Order("display_order ASC, name ASC").
 		Find(&classes).Error; err != nil {
 		return nil, 0, err
