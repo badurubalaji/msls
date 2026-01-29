@@ -63,11 +63,18 @@ export const routes: Routes = [
           import('./features/staff/staff.routes').then((m) => m.STAFF_ROUTES),
       },
 
-      // Attendance
+      // Staff Attendance
       {
         path: 'attendance',
         loadChildren: () =>
           import('./features/attendance/attendance.routes').then((m) => m.ATTENDANCE_ROUTES),
+      },
+
+      // Student Attendance
+      {
+        path: 'student-attendance',
+        loadChildren: () =>
+          import('./features/student-attendance/student-attendance.routes').then((m) => m.STUDENT_ATTENDANCE_ROUTES),
       },
 
       // Academics

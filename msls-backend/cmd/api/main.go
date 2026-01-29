@@ -53,6 +53,7 @@ import (
 	"msls-backend/internal/modules/staff"
 	"msls-backend/internal/modules/staffdocument"
 	"msls-backend/internal/modules/student"
+	"msls-backend/internal/modules/studentattendance"
 	"msls-backend/internal/pkg/config"
 	"msls-backend/internal/pkg/database"
 	apperrors "msls-backend/internal/pkg/errors"
@@ -307,6 +308,7 @@ func setupRouter(cfg *config.Config, log *logger.Logger, db *gorm.DB) *gin.Engin
 	// Initialize bulk operation services
 	bulkExportService := bulk.NewExportService(db, "./uploads")
 	bulkService := bulk.NewService(db, bulkExportService)
+	bulkImportService := bulk.NewImportService(db)
 
 	// Initialize department service
 	departmentRepo := department.NewRepository(db)
@@ -375,7 +377,7 @@ func setupRouter(cfg *config.Config, log *logger.Logger, db *gorm.DB) *gin.Engin
 	documentHandler := document.NewHandler(documentService)
 	enrollmentHandler := enrollment.NewHandler(enrollmentService)
 	promotionHandler := promotion.NewHandler(promotionService)
-	bulkHandler := bulk.NewHandler(bulkService)
+	bulkHandler := bulk.NewHandler(bulkService, bulkImportService)
 	departmentHandler := department.NewHandler(departmentService)
 	designationHandler := designation.NewHandler(designationService)
 	staffHandler := staff.NewHandler(staffService)
@@ -389,6 +391,10 @@ func setupRouter(cfg *config.Config, log *logger.Logger, db *gorm.DB) *gin.Engin
 	// Initialize attendance service (wrapping staff service for lookup)
 	attendanceService := attendance.NewService(db, staffService)
 	attendanceHandler := attendance.NewHandler(attendanceService)
+
+	// Initialize student attendance service
+	studentAttendanceService := studentattendance.NewService(db)
+	studentAttendanceHandler := studentattendance.NewHandler(studentAttendanceService)
 
 	// === API v1 Routes ===
 	v1 := router.Group("/api/v1")
@@ -656,6 +662,14 @@ func setupRouter(cfg *config.Config, log *logger.Logger, db *gorm.DB) *gin.Engin
 				studentsExport.Use(middleware.PermissionRequired("students:export"))
 				{
 					studentsExport.POST("/export", bulkHandler.Export)
+				}
+
+				// Import operations - require students:create permission
+				studentsImport := students.Group("/import")
+				studentsImport.Use(middleware.PermissionRequired("students:create"))
+				{
+					studentsImport.GET("/template", bulkHandler.DownloadTemplate)
+					studentsImport.POST("", bulkHandler.ImportStudents)
 				}
 
 				// Guardian management routes (nested under students)
@@ -1328,6 +1342,36 @@ func setupRouter(cfg *config.Config, log *logger.Logger, db *gorm.DB) *gin.Engin
 				}
 			}
 
+			// Student Attendance management routes
+			studentAttendanceRoutes := protected.Group("/student-attendance")
+			{
+				// Get teacher's assigned classes for attendance marking
+				studentAttendanceRoutes.GET("/my-classes", studentAttendanceHandler.GetMyClasses)
+
+				// Class attendance operations (requires student_attendance:mark_class permission)
+				classAttendance := studentAttendanceRoutes.Group("/class")
+				classAttendance.Use(middleware.PermissionRequired("student_attendance:mark_class"))
+				{
+					classAttendance.GET("/:id", studentAttendanceHandler.GetClassAttendance)
+					classAttendance.POST("/:id", studentAttendanceHandler.MarkClassAttendance)
+				}
+
+				// View all student attendance (requires student_attendance:view_all permission)
+				viewAll := studentAttendanceRoutes.Group("")
+				viewAll.Use(middleware.PermissionRequired("student_attendance:view_all"))
+				{
+					viewAll.GET("", studentAttendanceHandler.ListAttendance)
+				}
+
+				// Settings management (requires student_attendance:manage_settings permission)
+				studentAttendanceSettings := studentAttendanceRoutes.Group("/settings")
+				studentAttendanceSettings.Use(middleware.PermissionRequired("student_attendance:manage_settings"))
+				{
+					studentAttendanceSettings.GET("", studentAttendanceHandler.GetSettings)
+					studentAttendanceSettings.PUT("", studentAttendanceHandler.UpdateSettings)
+				}
+			}
+
 			// Salary management routes
 			salaryHandler.RegisterRoutes(protected, middleware.AuthRequired(jwtService))
 			salaryHandler.RegisterStaffSalaryRoutes(staffRoutes)
@@ -1341,6 +1385,9 @@ func setupRouter(cfg *config.Config, log *logger.Logger, db *gorm.DB) *gin.Engin
 
 			// Timetable structure routes (shifts, day patterns, period slots)
 			timetableHandler.RegisterRoutes(protected)
+
+			// Substitution management routes
+			timetableHandler.RegisterSubstitutionRoutes(protected)
 
 			// Teacher assignment routes
 			assignmentHandler.RegisterRoutes(protected)

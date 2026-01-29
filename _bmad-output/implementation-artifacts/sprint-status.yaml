@@ -106,18 +106,18 @@ development_status:
   epic-5-retrospective: optional
 
   # Epic 6: Academic Structure & Timetable
-  epic-6: in-progress
+  epic-6: done
   6-1-class-section-management: done
   6-2-subject-configuration: done
-  6-3-period-slot-configuration: in-progress
-  6-4-timetable-builder: backlog
-  6-5-teacher-timetable-view: backlog
-  6-6-substitution-management: backlog
+  6-3-period-slot-configuration: done
+  6-4-timetable-builder: done
+  6-5-teacher-timetable-view: done
+  6-6-substitution-management: done
   epic-6-retrospective: optional
 
   # Epic 7: Daily Attendance Operations
-  epic-7: backlog
-  7-1-daily-attendance-marking-interface: backlog
+  epic-7: in-progress
+  7-1-daily-attendance-marking-interface: review
   7-2-period-wise-attendance: backlog
   7-3-attendance-edit-history: backlog
   7-4-student-attendance-calendar-view: backlog

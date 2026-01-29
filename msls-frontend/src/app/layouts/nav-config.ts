@@ -78,7 +78,7 @@ export const NAV_ITEMS: NavItem[] = [
   {
     label: 'Attendance',
     icon: 'clock',
-    permissions: ['attendance:mark_self', 'attendance:view_all'],
+    permissions: ['attendance:mark_self', 'attendance:view_all', 'student_attendance:mark_class'],
     children: [
       {
         label: 'My Attendance',
@@ -87,10 +87,16 @@ export const NAV_ITEMS: NavItem[] = [
         permissions: ['attendance:mark_self'],
       },
       {
-        label: 'Manage',
+        label: 'Manage Staff',
         icon: 'clipboard-document-list',
         route: '/attendance/manage',
         permissions: ['attendance:view_all'],
+      },
+      {
+        label: 'Mark Student',
+        icon: 'user-group',
+        route: '/student-attendance/mark',
+        permissions: ['student_attendance:mark_class'],
       },
     ],
   },
@@ -141,6 +147,16 @@ export const NAV_ITEMS: NavItem[] = [
             route: '/academics/timetable',
           },
           {
+            label: 'Timetables',
+            icon: 'table-cells',
+            route: '/academics/timetable/list',
+          },
+          {
+            label: 'My Timetable',
+            icon: 'user',
+            route: '/academics/timetable/my',
+          },
+          {
             label: 'Shifts',
             icon: 'clock',
             route: '/academics/timetable/shifts',
@@ -155,6 +171,12 @@ export const NAV_ITEMS: NavItem[] = [
             icon: 'table-cells',
             route: '/academics/timetable/period-slots',
           },
+          {
+            label: 'Substitutions',
+            icon: 'arrows-right-left',
+            route: '/academics/timetable/substitutions',
+            permissions: ['substitution:view'],
+          },
         ],
       },
     ],
@@ -164,6 +186,12 @@ export const NAV_ITEMS: NavItem[] = [
     icon: 'clipboard-document-list',
     permissions: ['admissions:read', 'enquiries:read'],
     children: [
+      {
+        label: 'Overview',
+        icon: 'information-circle',
+        route: '/admissions',
+        permissions: ['admissions:read'],
+      },
       {
         label: 'Dashboard',
         icon: 'chart-bar',
