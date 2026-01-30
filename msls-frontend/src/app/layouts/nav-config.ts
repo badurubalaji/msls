@@ -196,8 +196,14 @@ export const NAV_ITEMS: NavItem[] = [
   {
     label: 'Exams',
     icon: 'file-signature',
-    permissions: ['exam:type:view'],
+    permissions: ['exam:type:view', 'exam:view'],
     children: [
+      {
+        label: 'Examinations',
+        icon: 'calendar-check',
+        route: '/exams/list',
+        permissions: ['exam:view'],
+      },
       {
         label: 'Exam Types',
         icon: 'clipboard-document-list',

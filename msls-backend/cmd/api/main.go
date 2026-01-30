@@ -44,6 +44,7 @@ import (
 	"msls-backend/internal/modules/document"
 	"msls-backend/internal/modules/enrollment"
 	"msls-backend/internal/modules/exam"
+	"msls-backend/internal/modules/examination"
 	"msls-backend/internal/modules/academic"
 	"msls-backend/internal/modules/timetable"
 	"msls-backend/internal/modules/guardian"
@@ -345,6 +346,10 @@ func setupRouter(cfg *config.Config, log *logger.Logger, db *gorm.DB) *gin.Engin
 	examRepo := exam.NewRepository(db)
 	examService := exam.NewService(examRepo)
 
+	// Initialize examination service
+	examinationRepo := examination.NewRepository(db)
+	examinationService := examination.NewService(examinationRepo)
+
 	// Initialize file storage for staff documents
 	fileStorage, err := storage.NewLocalStorage("./uploads", "/uploads")
 	if err != nil {
@@ -392,6 +397,7 @@ func setupRouter(cfg *config.Config, log *logger.Logger, db *gorm.DB) *gin.Engin
 	academicHandler := academic.NewHandler(academicService)
 	timetableHandler := timetable.NewHandler(timetableService)
 	examHandler := exam.NewHandler(examService)
+	examinationHandler := examination.NewHandler(examinationService)
 	staffDocumentHandler := staffdocument.NewHandler(staffDocumentService, fileStorage)
 
 	// Initialize attendance service (wrapping staff service for lookup)
@@ -1462,6 +1468,9 @@ func setupRouter(cfg *config.Config, log *logger.Logger, db *gorm.DB) *gin.Engin
 
 			// Exam type management routes
 			examHandler.RegisterRoutes(protected)
+
+			// Examination management routes
+			examinationHandler.RegisterRoutes(protected)
 
 			// Teacher assignment routes
 			assignmentHandler.RegisterRoutes(protected)

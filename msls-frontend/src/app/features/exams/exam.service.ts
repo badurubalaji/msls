@@ -17,6 +17,13 @@ import {
   UpdateExamTypeRequest,
   UpdateDisplayOrderRequest,
   ToggleActiveRequest,
+  Examination,
+  ExaminationFilter,
+  CreateExaminationRequest,
+  UpdateExaminationRequest,
+  ExamSchedule,
+  CreateScheduleRequest,
+  UpdateScheduleRequest,
 } from './exam.model';
 
 /**
@@ -96,8 +103,141 @@ export class ExamService {
   }
 
   // ========================================
+  // Examination Methods
+  // ========================================
+
+  /**
+   * Get all examinations with optional filters.
+   */
+  getExaminations(filter?: ExaminationFilter): Observable<Examination[]> {
+    const params = this.buildExaminationFilterParams(filter);
+    return this.apiService.get<Examination[]>('/examinations', { params });
+  }
+
+  /**
+   * Get a single examination by ID.
+   */
+  getExamination(id: string): Observable<Examination> {
+    return this.apiService.get<Examination>(`/examinations/${id}`);
+  }
+
+  /**
+   * Create a new examination.
+   */
+  createExamination(data: CreateExaminationRequest): Observable<Examination> {
+    return this.apiService.post<Examination>('/examinations', {
+      name: data.name,
+      examTypeId: data.examTypeId,
+      academicYearId: data.academicYearId,
+      startDate: data.startDate,
+      endDate: data.endDate,
+      description: data.description,
+      classIds: data.classIds,
+    });
+  }
+
+  /**
+   * Update an existing examination.
+   */
+  updateExamination(id: string, data: UpdateExaminationRequest): Observable<Examination> {
+    const payload: Record<string, unknown> = {};
+    if (data.name !== undefined) payload['name'] = data.name;
+    if (data.examTypeId !== undefined) payload['examTypeId'] = data.examTypeId;
+    if (data.academicYearId !== undefined) payload['academicYearId'] = data.academicYearId;
+    if (data.startDate !== undefined) payload['startDate'] = data.startDate;
+    if (data.endDate !== undefined) payload['endDate'] = data.endDate;
+    if (data.description !== undefined) payload['description'] = data.description;
+    if (data.classIds !== undefined) payload['classIds'] = data.classIds;
+    return this.apiService.put<Examination>(`/examinations/${id}`, payload);
+  }
+
+  /**
+   * Delete an examination.
+   */
+  deleteExamination(id: string): Observable<void> {
+    return this.apiService.delete<void>(`/examinations/${id}`);
+  }
+
+  /**
+   * Publish an examination (change status to scheduled).
+   */
+  publishExamination(id: string): Observable<Examination> {
+    return this.apiService.post<Examination>(`/examinations/${id}/publish`, {});
+  }
+
+  /**
+   * Unpublish an examination (revert to draft).
+   */
+  unpublishExamination(id: string): Observable<Examination> {
+    return this.apiService.post<Examination>(`/examinations/${id}/unpublish`, {});
+  }
+
+  // ========================================
+  // Exam Schedule Methods
+  // ========================================
+
+  /**
+   * Get all schedules for an examination.
+   */
+  getSchedules(examinationId: string): Observable<ExamSchedule[]> {
+    return this.apiService.get<ExamSchedule[]>(`/examinations/${examinationId}/schedules`);
+  }
+
+  /**
+   * Create a new schedule for an examination.
+   */
+  createSchedule(examinationId: string, data: CreateScheduleRequest): Observable<ExamSchedule> {
+    return this.apiService.post<ExamSchedule>(`/examinations/${examinationId}/schedules`, {
+      subjectId: data.subjectId,
+      examDate: data.examDate,
+      startTime: data.startTime,
+      endTime: data.endTime,
+      maxMarks: data.maxMarks,
+      passingMarks: data.passingMarks,
+      venue: data.venue,
+      notes: data.notes,
+    });
+  }
+
+  /**
+   * Update a schedule.
+   */
+  updateSchedule(examinationId: string, scheduleId: string, data: UpdateScheduleRequest): Observable<ExamSchedule> {
+    const payload: Record<string, unknown> = {};
+    if (data.subjectId !== undefined) payload['subjectId'] = data.subjectId;
+    if (data.examDate !== undefined) payload['examDate'] = data.examDate;
+    if (data.startTime !== undefined) payload['startTime'] = data.startTime;
+    if (data.endTime !== undefined) payload['endTime'] = data.endTime;
+    if (data.maxMarks !== undefined) payload['maxMarks'] = data.maxMarks;
+    if (data.passingMarks !== undefined) payload['passingMarks'] = data.passingMarks;
+    if (data.venue !== undefined) payload['venue'] = data.venue;
+    if (data.notes !== undefined) payload['notes'] = data.notes;
+    return this.apiService.put<ExamSchedule>(`/examinations/${examinationId}/schedules/${scheduleId}`, payload);
+  }
+
+  /**
+   * Delete a schedule.
+   */
+  deleteSchedule(examinationId: string, scheduleId: string): Observable<void> {
+    return this.apiService.delete<void>(`/examinations/${examinationId}/schedules/${scheduleId}`);
+  }
+
+  // ========================================
   // Private Helper Methods
   // ========================================
+
+  private buildExaminationFilterParams(filter?: ExaminationFilter): Record<string, string> {
+    const params: Record<string, string> = {};
+    if (!filter) return params;
+
+    if (filter.academicYearId) params['academicYearId'] = filter.academicYearId;
+    if (filter.examTypeId) params['examTypeId'] = filter.examTypeId;
+    if (filter.classId) params['classId'] = filter.classId;
+    if (filter.status) params['status'] = filter.status;
+    if (filter.search) params['search'] = filter.search;
+
+    return params;
+  }
 
   private buildExamTypeFilterParams(filter?: ExamTypeFilter): Record<string, string> {
     const params: Record<string, string> = {};

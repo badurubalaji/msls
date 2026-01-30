@@ -6,8 +6,14 @@ export const EXAMS_ROUTES: Routes = [
     children: [
       {
         path: '',
-        redirectTo: 'types',
+        redirectTo: 'list',
         pathMatch: 'full',
+      },
+      {
+        path: 'list',
+        loadComponent: () =>
+          import('./examination-list/examination-list.component').then(m => m.ExaminationListComponent),
+        title: 'Examinations',
       },
       {
         path: 'types',

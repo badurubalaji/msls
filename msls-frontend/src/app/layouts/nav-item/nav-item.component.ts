@@ -100,6 +100,7 @@ export class NavItemComponent {
     // Calendar & Time
     'calendar': 'fa-solid fa-calendar',
     'calendar-days': 'fa-solid fa-calendar-days',
+    'calendar-check': 'fa-solid fa-calendar-check',
     'clock': 'fa-solid fa-clock',
 
     // Money & Finance

@@ -76,6 +76,121 @@ export interface ToggleActiveRequest {
 }
 
 // ========================================
+// Examination Models
+// ========================================
+
+export type ExamStatus = 'draft' | 'scheduled' | 'ongoing' | 'completed' | 'cancelled';
+
+export const EXAM_STATUSES: { value: ExamStatus; label: string; color: string; icon: string }[] = [
+  { value: 'draft', label: 'Draft', color: 'bg-gray-100 text-gray-700', icon: 'fa-solid fa-file-pen' },
+  { value: 'scheduled', label: 'Scheduled', color: 'bg-blue-100 text-blue-700', icon: 'fa-solid fa-calendar-check' },
+  { value: 'ongoing', label: 'Ongoing', color: 'bg-amber-100 text-amber-700', icon: 'fa-solid fa-spinner' },
+  { value: 'completed', label: 'Completed', color: 'bg-green-100 text-green-700', icon: 'fa-solid fa-check-circle' },
+  { value: 'cancelled', label: 'Cancelled', color: 'bg-red-100 text-red-700', icon: 'fa-solid fa-times-circle' },
+];
+
+export interface ClassSummary {
+  id: string;
+  name: string;
+}
+
+export interface AcademicYearSummary {
+  id: string;
+  name: string;
+  isCurrent: boolean;
+}
+
+export interface SubjectSummary {
+  id: string;
+  name: string;
+  code: string;
+}
+
+export interface ExamSchedule {
+  id: string;
+  subjectId: string;
+  subjectName?: string;
+  subjectCode?: string;
+  examDate: string;
+  startTime: string;
+  endTime: string;
+  maxMarks: number;
+  passingMarks?: number;
+  venue?: string;
+  notes?: string;
+}
+
+export interface Examination {
+  id: string;
+  name: string;
+  examTypeId: string;
+  examTypeName?: string;
+  academicYearId: string;
+  academicYear?: string;
+  startDate: string;
+  endDate: string;
+  status: ExamStatus;
+  description?: string;
+  classes: ClassSummary[];
+  schedules?: ExamSchedule[];
+  scheduleCount: number;
+  createdAt: string;
+  updatedAt: string;
+  // For convenience in UI
+  examType?: { id: string; name: string };
+}
+
+export interface CreateExaminationRequest {
+  name: string;
+  examTypeId: string;
+  academicYearId: string;
+  startDate: string;
+  endDate: string;
+  description?: string;
+  classIds: string[];
+}
+
+export interface UpdateExaminationRequest {
+  name?: string;
+  examTypeId?: string;
+  academicYearId?: string;
+  startDate?: string;
+  endDate?: string;
+  description?: string;
+  classIds?: string[];
+}
+
+export interface ExaminationFilter {
+  academicYearId?: string;
+  examTypeId?: string;
+  classId?: string;
+  status?: ExamStatus;
+  search?: string;
+}
+
+export interface CreateScheduleRequest {
+  subjectId: string;
+  examDate: string;
+  startTime: string;
+  endTime: string;
+  maxMarks: number;
+  passingMarks?: number;
+  venue?: string;
+  notes?: string;
+}
+
+export interface UpdateScheduleRequest {
+  subjectId?: string;
+  examDate?: string;
+  startTime?: string;
+  endTime?: string;
+  maxMarks?: number;
+  passingMarks?: number;
+  venue?: string;
+  notes?: string;
+}
+
+// ========================================
 // Common Exam Constants
 // ========================================
 
