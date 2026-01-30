@@ -89,9 +89,13 @@ export class NavItemComponent {
     // Documents & Content
     'document-text': 'fa-solid fa-file-lines',
     'document': 'fa-solid fa-file',
+    'document-check': 'fa-solid fa-file-circle-check',
     'clipboard-document-list': 'fa-solid fa-clipboard-list',
+    'clipboard-document-check': 'fa-solid fa-clipboard-check',
     'folder': 'fa-solid fa-folder',
     'folder-open': 'fa-solid fa-folder-open',
+    'file-signature': 'fa-solid fa-file-signature',
+    'file-pen': 'fa-solid fa-file-pen',
 
     // Calendar & Time
     'calendar': 'fa-solid fa-calendar',
@@ -107,15 +111,27 @@ export class NavItemComponent {
     'chat-bubble-left': 'fa-solid fa-comment',
     'envelope': 'fa-solid fa-envelope',
     'bell': 'fa-solid fa-bell',
+    'comment-dots': 'fa-solid fa-comment-dots',
+
+    // Academics
+    'book-open': 'fa-solid fa-book-open',
+    'rectangle-stack': 'fa-solid fa-layer-group',
+    'arrows-right-left': 'fa-solid fa-arrows-left-right',
+    'table-cells': 'fa-solid fa-table-cells',
 
     // Other
-    'book-open': 'fa-solid fa-book-open',
     'building-office': 'fa-solid fa-building',
     'truck': 'fa-solid fa-truck',
     'beaker': 'fa-solid fa-flask',
     'presentation-chart-line': 'fa-solid fa-chart-line',
     'question-mark-circle': 'fa-solid fa-circle-question',
     'information-circle': 'fa-solid fa-circle-info',
+    'map-pin': 'fa-solid fa-location-dot',
+    'identification': 'fa-solid fa-id-badge',
+    'briefcase': 'fa-solid fa-briefcase',
+    'exclamation-triangle': 'fa-solid fa-triangle-exclamation',
+    'trophy': 'fa-solid fa-trophy',
+    'list-check': 'fa-solid fa-list-check',
 
     // Arrows & Navigation
     'chevron-down': 'fa-solid fa-chevron-down',
