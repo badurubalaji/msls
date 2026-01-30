@@ -135,6 +135,13 @@ export const routes: Routes = [
           import('./features/profile/profile.component').then((m) => m.ProfileComponent),
       },
 
+      // Exams
+      {
+        path: 'exams',
+        loadChildren: () =>
+          import('./features/exams/exams.routes').then((m) => m.EXAMS_ROUTES),
+      },
+
       // Admin
       {
         path: 'admin',

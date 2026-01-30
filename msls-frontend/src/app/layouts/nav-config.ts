@@ -194,6 +194,19 @@ export const NAV_ITEMS: NavItem[] = [
     ],
   },
   {
+    label: 'Exams',
+    icon: 'document-check',
+    permissions: ['exam:type:view'],
+    children: [
+      {
+        label: 'Exam Types',
+        icon: 'clipboard-document-list',
+        route: '/exams/types',
+        permissions: ['exam:type:view'],
+      },
+    ],
+  },
+  {
     label: 'Admissions',
     icon: 'clipboard-document-list',
     permissions: ['admissions:read', 'enquiries:read'],
