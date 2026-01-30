@@ -3,6 +3,7 @@ package timetable
 
 import (
 	"context"
+	"time"
 
 	"msls-backend/internal/pkg/database/models"
 
@@ -358,4 +359,309 @@ func (s *Service) DeletePeriodSlot(ctx context.Context, tenantID, id uuid.UUID) 
 	}
 
 	return s.repo.DeletePeriodSlot(ctx, tenantID, id)
+}
+
+// ========================================
+// Timetable Service Methods
+// ========================================
+
+// ListTimetables returns all timetables for a tenant with filters.
+func (s *Service) ListTimetables(ctx context.Context, filter TimetableFilter) ([]models.Timetable, int64, error) {
+	return s.repo.ListTimetables(ctx, filter)
+}
+
+// GetTimetableByID returns a timetable by ID with entries.
+func (s *Service) GetTimetableByID(ctx context.Context, tenantID, id uuid.UUID) (*models.Timetable, error) {
+	return s.repo.GetTimetableByID(ctx, tenantID, id)
+}
+
+// GetPublishedTimetableForSection returns the published timetable for a section.
+func (s *Service) GetPublishedTimetableForSection(ctx context.Context, tenantID, sectionID, academicYearID uuid.UUID) (*models.Timetable, error) {
+	return s.repo.GetPublishedTimetableForSection(ctx, tenantID, sectionID, academicYearID)
+}
+
+// CreateTimetable creates a new timetable.
+func (s *Service) CreateTimetable(ctx context.Context, tenantID uuid.UUID, req CreateTimetableRequest, userID uuid.UUID) (*models.Timetable, error) {
+	timetable := &models.Timetable{
+		TenantID:       tenantID,
+		BranchID:       req.BranchID,
+		SectionID:      req.SectionID,
+		AcademicYearID: req.AcademicYearID,
+		Name:           req.Name,
+		Description:    req.Description,
+		Status:         models.TimetableStatusDraft,
+		CreatedBy:      &userID,
+	}
+
+	// Parse dates if provided
+	if req.EffectiveFrom != "" {
+		t, err := time.Parse("2006-01-02", req.EffectiveFrom)
+		if err == nil {
+			timetable.EffectiveFrom = &t
+		}
+	}
+	if req.EffectiveTo != "" {
+		t, err := time.Parse("2006-01-02", req.EffectiveTo)
+		if err == nil {
+			timetable.EffectiveTo = &t
+		}
+	}
+
+	if err := s.repo.CreateTimetable(ctx, timetable); err != nil {
+		return nil, err
+	}
+
+	return s.repo.GetTimetableByID(ctx, tenantID, timetable.ID)
+}
+
+// UpdateTimetable updates an existing timetable.
+func (s *Service) UpdateTimetable(ctx context.Context, tenantID, id uuid.UUID, req UpdateTimetableRequest) (*models.Timetable, error) {
+	timetable, err := s.repo.GetTimetableByID(ctx, tenantID, id)
+	if err != nil {
+		return nil, err
+	}
+
+	// Only draft timetables can be updated
+	if timetable.Status != models.TimetableStatusDraft {
+		return nil, ErrTimetableNotDraft
+	}
+
+	if req.Name != nil {
+		timetable.Name = *req.Name
+	}
+	if req.Description != nil {
+		timetable.Description = *req.Description
+	}
+	if req.EffectiveFrom != nil {
+		t, err := time.Parse("2006-01-02", *req.EffectiveFrom)
+		if err == nil {
+			timetable.EffectiveFrom = &t
+		}
+	}
+	if req.EffectiveTo != nil {
+		t, err := time.Parse("2006-01-02", *req.EffectiveTo)
+		if err == nil {
+			timetable.EffectiveTo = &t
+		}
+	}
+
+	if err := s.repo.UpdateTimetable(ctx, timetable); err != nil {
+		return nil, err
+	}
+
+	return s.repo.GetTimetableByID(ctx, tenantID, id)
+}
+
+// PublishTimetable publishes a draft timetable.
+func (s *Service) PublishTimetable(ctx context.Context, tenantID, id uuid.UUID, userID uuid.UUID) (*models.Timetable, error) {
+	timetable, err := s.repo.GetTimetableByID(ctx, tenantID, id)
+	if err != nil {
+		return nil, err
+	}
+
+	if timetable.Status != models.TimetableStatusDraft {
+		return nil, ErrTimetableAlreadyPublished
+	}
+
+	// Archive any existing published timetable for this section
+	if err := s.repo.ArchiveOtherTimetables(ctx, tenantID, timetable.SectionID, timetable.AcademicYearID, id); err != nil {
+		return nil, err
+	}
+
+	// Update status to published
+	now := time.Now()
+	timetable.Status = models.TimetableStatusPublished
+	timetable.PublishedAt = &now
+	timetable.PublishedBy = &userID
+
+	if err := s.repo.UpdateTimetable(ctx, timetable); err != nil {
+		return nil, err
+	}
+
+	return s.repo.GetTimetableByID(ctx, tenantID, id)
+}
+
+// ArchiveTimetable archives a published timetable.
+func (s *Service) ArchiveTimetable(ctx context.Context, tenantID, id uuid.UUID) (*models.Timetable, error) {
+	timetable, err := s.repo.GetTimetableByID(ctx, tenantID, id)
+	if err != nil {
+		return nil, err
+	}
+
+	timetable.Status = models.TimetableStatusArchived
+
+	if err := s.repo.UpdateTimetable(ctx, timetable); err != nil {
+		return nil, err
+	}
+
+	return s.repo.GetTimetableByID(ctx, tenantID, id)
+}
+
+// DeleteTimetable deletes a draft timetable.
+func (s *Service) DeleteTimetable(ctx context.Context, tenantID, id uuid.UUID) error {
+	timetable, err := s.repo.GetTimetableByID(ctx, tenantID, id)
+	if err != nil {
+		return err
+	}
+
+	// Only draft timetables can be deleted
+	if timetable.Status != models.TimetableStatusDraft {
+		return ErrTimetableNotDraft
+	}
+
+	// Delete all entries first
+	if err := s.repo.DeleteTimetableEntriesByTimetableID(ctx, id); err != nil {
+		return err
+	}
+
+	return s.repo.DeleteTimetable(ctx, tenantID, id)
+}
+
+// ========================================
+// Timetable Entry Service Methods
+// ========================================
+
+// GetTimetableEntries returns all entries for a timetable.
+func (s *Service) GetTimetableEntries(ctx context.Context, timetableID uuid.UUID) ([]models.TimetableEntry, error) {
+	return s.repo.GetTimetableEntries(ctx, timetableID)
+}
+
+// UpsertTimetableEntry creates or updates a timetable entry.
+func (s *Service) UpsertTimetableEntry(ctx context.Context, tenantID, timetableID uuid.UUID, req CreateTimetableEntryRequest) (*models.TimetableEntry, error) {
+	// Verify timetable exists and is draft
+	timetable, err := s.repo.GetTimetableByID(ctx, tenantID, timetableID)
+	if err != nil {
+		return nil, err
+	}
+
+	if timetable.Status != models.TimetableStatusDraft {
+		return nil, ErrTimetableNotDraft
+	}
+
+	entry := &models.TimetableEntry{
+		TenantID:     tenantID,
+		TimetableID:  timetableID,
+		DayOfWeek:    req.DayOfWeek,
+		PeriodSlotID: req.PeriodSlotID,
+		SubjectID:    req.SubjectID,
+		StaffID:      req.StaffID,
+		RoomNumber:   req.RoomNumber,
+		Notes:        req.Notes,
+		IsFreePeriod: req.IsFreePeriod,
+	}
+
+	if err := s.repo.UpsertTimetableEntry(ctx, entry); err != nil {
+		return nil, err
+	}
+
+	return s.repo.GetTimetableEntry(ctx, tenantID, entry.ID)
+}
+
+// BulkUpsertTimetableEntries creates or updates multiple entries.
+func (s *Service) BulkUpsertTimetableEntries(ctx context.Context, tenantID, timetableID uuid.UUID, req BulkTimetableEntryRequest) error {
+	// Verify timetable exists and is draft
+	timetable, err := s.repo.GetTimetableByID(ctx, tenantID, timetableID)
+	if err != nil {
+		return err
+	}
+
+	if timetable.Status != models.TimetableStatusDraft {
+		return ErrTimetableNotDraft
+	}
+
+	for _, entryReq := range req.Entries {
+		entry := &models.TimetableEntry{
+			TenantID:     tenantID,
+			TimetableID:  timetableID,
+			DayOfWeek:    entryReq.DayOfWeek,
+			PeriodSlotID: entryReq.PeriodSlotID,
+			SubjectID:    entryReq.SubjectID,
+			StaffID:      entryReq.StaffID,
+			RoomNumber:   entryReq.RoomNumber,
+			Notes:        entryReq.Notes,
+			IsFreePeriod: entryReq.IsFreePeriod,
+		}
+
+		if err := s.repo.UpsertTimetableEntry(ctx, entry); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// DeleteTimetableEntry deletes a timetable entry.
+func (s *Service) DeleteTimetableEntry(ctx context.Context, tenantID, timetableID, entryID uuid.UUID) error {
+	// Verify timetable exists and is draft
+	timetable, err := s.repo.GetTimetableByID(ctx, tenantID, timetableID)
+	if err != nil {
+		return err
+	}
+
+	if timetable.Status != models.TimetableStatusDraft {
+		return ErrTimetableNotDraft
+	}
+
+	return s.repo.DeleteTimetableEntry(ctx, tenantID, entryID)
+}
+
+// ========================================
+// Conflict Detection Service Methods
+// ========================================
+
+// CheckTeacherConflicts checks for teacher conflicts.
+func (s *Service) CheckTeacherConflicts(ctx context.Context, tenantID, staffID uuid.UUID, dayOfWeek int, periodSlotID uuid.UUID, excludeTimetableID *uuid.UUID) ([]TeacherConflict, error) {
+	entries, err := s.repo.GetTeacherConflicts(ctx, tenantID, staffID, dayOfWeek, periodSlotID, excludeTimetableID)
+	if err != nil {
+		return nil, err
+	}
+
+	conflicts := make([]TeacherConflict, 0, len(entries))
+	for _, e := range entries {
+		conflict := TeacherConflict{
+			StaffID:      *e.StaffID,
+			DayOfWeek:    e.DayOfWeek,
+			DayName:      e.GetDayName(),
+			PeriodSlotID: e.PeriodSlotID,
+		}
+
+		if e.Staff != nil {
+			conflict.StaffName = e.Staff.FirstName
+			if e.Staff.LastName != "" {
+				conflict.StaffName += " " + e.Staff.LastName
+			}
+		}
+
+		if e.PeriodSlot != nil {
+			conflict.PeriodName = e.PeriodSlot.Name
+			conflict.StartTime = e.PeriodSlot.StartTime
+			conflict.EndTime = e.PeriodSlot.EndTime
+		}
+
+		if e.Timetable != nil && e.Timetable.Section != nil {
+			conflict.SectionID = e.Timetable.SectionID
+			conflict.SectionName = e.Timetable.Section.Name
+			if e.Timetable.Section.Class.ID != uuid.Nil {
+				conflict.ClassName = e.Timetable.Section.Class.Name
+			}
+		}
+
+		if e.Subject != nil {
+			conflict.SubjectName = e.Subject.Name
+		}
+
+		conflicts = append(conflicts, conflict)
+	}
+
+	return conflicts, nil
+}
+
+// GetTeacherSchedule returns a teacher's full schedule.
+func (s *Service) GetTeacherSchedule(ctx context.Context, tenantID, staffID, academicYearID uuid.UUID) ([]models.TimetableEntry, error) {
+	return s.repo.GetTeacherSchedule(ctx, tenantID, staffID, academicYearID)
+}
+
+// GetStaffIDByUserID returns the staff ID for a given user ID.
+func (s *Service) GetStaffIDByUserID(ctx context.Context, tenantID, userID uuid.UUID) (uuid.UUID, error) {
+	return s.repo.GetStaffIDByUserID(ctx, tenantID, userID)
 }

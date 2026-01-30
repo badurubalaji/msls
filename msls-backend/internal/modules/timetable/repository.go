@@ -310,3 +310,252 @@ func (r *Repository) DeletePeriodSlot(ctx context.Context, tenantID, id uuid.UUI
 		Where("tenant_id = ? AND id = ?", tenantID, id).
 		Delete(&models.PeriodSlot{}).Error
 }
+
+// ========================================
+// Timetable Repository Methods
+// ========================================
+
+// ListTimetables returns all timetables for a tenant with filters.
+func (r *Repository) ListTimetables(ctx context.Context, filter TimetableFilter) ([]models.Timetable, int64, error) {
+	var timetables []models.Timetable
+	var total int64
+
+	query := r.db.WithContext(ctx).Model(&models.Timetable{}).
+		Where("tenant_id = ? AND deleted_at IS NULL", filter.TenantID)
+
+	if filter.BranchID != nil {
+		query = query.Where("branch_id = ?", *filter.BranchID)
+	}
+
+	if filter.SectionID != nil {
+		query = query.Where("section_id = ?", *filter.SectionID)
+	}
+
+	if filter.AcademicYearID != nil {
+		query = query.Where("academic_year_id = ?", *filter.AcademicYearID)
+	}
+
+	if filter.Status != nil {
+		query = query.Where("status = ?", *filter.Status)
+	}
+
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	if err := query.
+		Preload("Branch").
+		Preload("Section").
+		Preload("Section.Class").
+		Preload("AcademicYear").
+		Order("created_at DESC").
+		Find(&timetables).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return timetables, total, nil
+}
+
+// GetTimetableByID returns a timetable by ID with all entries.
+func (r *Repository) GetTimetableByID(ctx context.Context, tenantID, id uuid.UUID) (*models.Timetable, error) {
+	var timetable models.Timetable
+	err := r.db.WithContext(ctx).
+		Preload("Branch").
+		Preload("Section").
+		Preload("Section.Class").
+		Preload("AcademicYear").
+		Preload("Entries", func(db *gorm.DB) *gorm.DB {
+			return db.Order("day_of_week ASC, period_slot_id ASC")
+		}).
+		Preload("Entries.PeriodSlot").
+		Preload("Entries.Subject").
+		Preload("Entries.Staff").
+		Where("tenant_id = ? AND id = ? AND deleted_at IS NULL", tenantID, id).
+		First(&timetable).Error
+
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, ErrTimetableNotFound
+	}
+	return &timetable, err
+}
+
+// GetPublishedTimetableForSection returns the published timetable for a section.
+func (r *Repository) GetPublishedTimetableForSection(ctx context.Context, tenantID, sectionID, academicYearID uuid.UUID) (*models.Timetable, error) {
+	var timetable models.Timetable
+	err := r.db.WithContext(ctx).
+		Preload("Branch").
+		Preload("Section").
+		Preload("Section.Class").
+		Preload("AcademicYear").
+		Preload("Entries", func(db *gorm.DB) *gorm.DB {
+			return db.Order("day_of_week ASC, period_slot_id ASC")
+		}).
+		Preload("Entries.PeriodSlot").
+		Preload("Entries.Subject").
+		Preload("Entries.Staff").
+		Where("tenant_id = ? AND section_id = ? AND academic_year_id = ? AND status = ? AND deleted_at IS NULL",
+			tenantID, sectionID, academicYearID, models.TimetableStatusPublished).
+		First(&timetable).Error
+
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+	return &timetable, err
+}
+
+// CreateTimetable creates a new timetable.
+func (r *Repository) CreateTimetable(ctx context.Context, timetable *models.Timetable) error {
+	return r.db.WithContext(ctx).Create(timetable).Error
+}
+
+// UpdateTimetable updates an existing timetable.
+func (r *Repository) UpdateTimetable(ctx context.Context, timetable *models.Timetable) error {
+	return r.db.WithContext(ctx).Save(timetable).Error
+}
+
+// DeleteTimetable soft deletes a timetable.
+func (r *Repository) DeleteTimetable(ctx context.Context, tenantID, id uuid.UUID) error {
+	return r.db.WithContext(ctx).
+		Model(&models.Timetable{}).
+		Where("tenant_id = ? AND id = ?", tenantID, id).
+		Update("deleted_at", gorm.Expr("NOW()")).Error
+}
+
+// ArchiveOtherTimetables archives all other published timetables for the same section.
+func (r *Repository) ArchiveOtherTimetables(ctx context.Context, tenantID, sectionID, academicYearID, excludeID uuid.UUID) error {
+	return r.db.WithContext(ctx).
+		Model(&models.Timetable{}).
+		Where("tenant_id = ? AND section_id = ? AND academic_year_id = ? AND id != ? AND status = ? AND deleted_at IS NULL",
+			tenantID, sectionID, academicYearID, excludeID, models.TimetableStatusPublished).
+		Update("status", models.TimetableStatusArchived).Error
+}
+
+// ========================================
+// Timetable Entry Repository Methods
+// ========================================
+
+// GetTimetableEntries returns all entries for a timetable.
+func (r *Repository) GetTimetableEntries(ctx context.Context, timetableID uuid.UUID) ([]models.TimetableEntry, error) {
+	var entries []models.TimetableEntry
+	err := r.db.WithContext(ctx).
+		Preload("PeriodSlot").
+		Preload("Subject").
+		Preload("Staff").
+		Where("timetable_id = ?", timetableID).
+		Order("day_of_week ASC, period_slot_id ASC").
+		Find(&entries).Error
+	return entries, err
+}
+
+// GetTimetableEntry returns a single entry by ID.
+func (r *Repository) GetTimetableEntry(ctx context.Context, tenantID, entryID uuid.UUID) (*models.TimetableEntry, error) {
+	var entry models.TimetableEntry
+	err := r.db.WithContext(ctx).
+		Preload("PeriodSlot").
+		Preload("Subject").
+		Preload("Staff").
+		Where("tenant_id = ? AND id = ?", tenantID, entryID).
+		First(&entry).Error
+
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, ErrTimetableEntryNotFound
+	}
+	return &entry, err
+}
+
+// UpsertTimetableEntry creates or updates a timetable entry.
+func (r *Repository) UpsertTimetableEntry(ctx context.Context, entry *models.TimetableEntry) error {
+	// Try to find existing entry for this slot
+	var existing models.TimetableEntry
+	err := r.db.WithContext(ctx).
+		Where("timetable_id = ? AND day_of_week = ? AND period_slot_id = ?",
+			entry.TimetableID, entry.DayOfWeek, entry.PeriodSlotID).
+		First(&existing).Error
+
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		// Create new entry
+		return r.db.WithContext(ctx).Create(entry).Error
+	} else if err != nil {
+		return err
+	}
+
+	// Update existing entry
+	entry.ID = existing.ID
+	return r.db.WithContext(ctx).Save(entry).Error
+}
+
+// DeleteTimetableEntry deletes a timetable entry.
+func (r *Repository) DeleteTimetableEntry(ctx context.Context, tenantID, entryID uuid.UUID) error {
+	return r.db.WithContext(ctx).
+		Where("tenant_id = ? AND id = ?", tenantID, entryID).
+		Delete(&models.TimetableEntry{}).Error
+}
+
+// DeleteTimetableEntriesByTimetableID deletes all entries for a timetable.
+func (r *Repository) DeleteTimetableEntriesByTimetableID(ctx context.Context, timetableID uuid.UUID) error {
+	return r.db.WithContext(ctx).
+		Where("timetable_id = ?", timetableID).
+		Delete(&models.TimetableEntry{}).Error
+}
+
+// ========================================
+// Conflict Detection Repository Methods
+// ========================================
+
+// GetTeacherConflicts checks for teacher double-booking conflicts.
+func (r *Repository) GetTeacherConflicts(ctx context.Context, tenantID, staffID uuid.UUID, dayOfWeek int, periodSlotID uuid.UUID, excludeTimetableID *uuid.UUID) ([]models.TimetableEntry, error) {
+	var entries []models.TimetableEntry
+
+	query := r.db.WithContext(ctx).
+		Joins("JOIN timetables ON timetables.id = timetable_entries.timetable_id").
+		Preload("Timetable").
+		Preload("Timetable.Section").
+		Preload("Timetable.Section.Class").
+		Preload("PeriodSlot").
+		Preload("Subject").
+		Where("timetable_entries.tenant_id = ? AND timetable_entries.staff_id = ? AND timetable_entries.day_of_week = ? AND timetable_entries.period_slot_id = ?",
+			tenantID, staffID, dayOfWeek, periodSlotID).
+		Where("timetables.status = ? AND timetables.deleted_at IS NULL", models.TimetableStatusPublished)
+
+	if excludeTimetableID != nil {
+		query = query.Where("timetables.id != ?", *excludeTimetableID)
+	}
+
+	err := query.Find(&entries).Error
+	return entries, err
+}
+
+// GetTeacherSchedule returns all timetable entries for a teacher across published timetables.
+func (r *Repository) GetTeacherSchedule(ctx context.Context, tenantID, staffID, academicYearID uuid.UUID) ([]models.TimetableEntry, error) {
+	var entries []models.TimetableEntry
+
+	err := r.db.WithContext(ctx).
+		Joins("JOIN timetables ON timetables.id = timetable_entries.timetable_id").
+		Preload("Timetable").
+		Preload("Timetable.Section").
+		Preload("Timetable.Section.Class").
+		Preload("PeriodSlot").
+		Preload("Subject").
+		Where("timetable_entries.tenant_id = ? AND timetable_entries.staff_id = ?", tenantID, staffID).
+		Where("timetables.academic_year_id = ? AND timetables.status = ? AND timetables.deleted_at IS NULL",
+			academicYearID, models.TimetableStatusPublished).
+		Order("timetable_entries.day_of_week ASC, timetable_entries.period_slot_id ASC").
+		Find(&entries).Error
+
+	return entries, err
+}
+
+// GetStaffIDByUserID returns the staff ID for a given user ID.
+func (r *Repository) GetStaffIDByUserID(ctx context.Context, tenantID, userID uuid.UUID) (uuid.UUID, error) {
+	var staff models.Staff
+	err := r.db.WithContext(ctx).
+		Select("id").
+		Where("tenant_id = ? AND user_id = ? AND deleted_at IS NULL", tenantID, userID).
+		First(&staff).Error
+
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	return staff.ID, nil
+}

@@ -508,3 +508,35 @@ export function getBulkStatusLabel(status: BulkOperationStatus): string {
       return status;
   }
 }
+
+// =========================================================================
+// Import Types
+// =========================================================================
+
+/**
+ * Import error details
+ */
+export interface ImportError {
+  /** Row number in the file */
+  row: number;
+  /** Column name where error occurred */
+  column?: string;
+  /** Error message */
+  message: string;
+}
+
+/**
+ * Import result
+ */
+export interface ImportResult {
+  /** Total rows processed */
+  totalRows: number;
+  /** Number of successful imports */
+  successCount: number;
+  /** Number of failed imports */
+  failedCount: number;
+  /** List of errors encountered */
+  errors?: ImportError[];
+  /** IDs of created students */
+  createdIds?: string[];
+}

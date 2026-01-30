@@ -56,3 +56,45 @@ var (
 	// ErrUnauthorized is returned when the user is not authorized to perform the action.
 	ErrUnauthorized = errors.New("not authorized to mark attendance for this section")
 )
+
+// Period-wise attendance errors (Story 7.2).
+var (
+	// ErrPeriodNotFound is returned when a period slot is not found.
+	ErrPeriodNotFound = errors.New("period slot not found")
+
+	// ErrTimetableEntryNotFound is returned when a timetable entry is not found.
+	ErrTimetableEntryNotFound = errors.New("timetable entry not found")
+
+	// ErrNoTimetableForSection is returned when no published timetable exists for a section.
+	ErrNoTimetableForSection = errors.New("no published timetable found for this section")
+
+	// ErrPeriodAttendanceNotEnabled is returned when period attendance is not enabled.
+	ErrPeriodAttendanceNotEnabled = errors.New("period-wise attendance is not enabled for this branch")
+
+	// ErrInvalidPeriodForSection is returned when the period doesn't belong to the section's timetable.
+	ErrInvalidPeriodForSection = errors.New("period does not belong to this section's timetable")
+
+	// ErrPeriodIDRequired is returned when period ID is not provided.
+	ErrPeriodIDRequired = errors.New("period ID is required")
+
+	// ErrSubjectIDRequired is returned when subject ID is not provided.
+	ErrSubjectIDRequired = errors.New("subject ID is required")
+)
+
+// Edit and audit errors (Story 7.3).
+var (
+	// ErrEditReasonRequired is returned when edit reason is not provided.
+	ErrEditReasonRequired = errors.New("edit reason is required")
+
+	// ErrNotOriginalMarker is returned when user is not the original marker and not admin.
+	ErrNotOriginalMarker = errors.New("only the original marker or admin can edit within edit window")
+
+	// ErrAdminOnlyEdit is returned when edit window expired and user is not admin.
+	ErrAdminOnlyEdit = errors.New("edit window expired - admin approval required")
+
+	// ErrAuditNotFound is returned when audit record is not found.
+	ErrAuditNotFound = errors.New("audit record not found")
+
+	// ErrAttendanceIDRequired is returned when attendance ID is not provided.
+	ErrAttendanceIDRequired = errors.New("attendance ID is required")
+)

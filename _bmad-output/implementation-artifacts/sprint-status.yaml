@@ -118,13 +118,13 @@ development_status:
   # Epic 7: Daily Attendance Operations
   epic-7: in-progress
   7-1-daily-attendance-marking-interface: review
-  7-2-period-wise-attendance: backlog
-  7-3-attendance-edit-history: backlog
-  7-4-student-attendance-calendar-view: backlog
-  7-5-attendance-reports-class-level: backlog
-  7-6-attendance-reports-individual-student: backlog
-  7-7-low-attendance-alerts: backlog
-  7-8-attendance-deadline-enforcement: backlog
+  7-2-period-wise-attendance: review
+  7-3-attendance-edit-history: review
+  7-4-student-attendance-calendar-view: review
+  7-5-attendance-reports-class-level: review
+  7-6-attendance-reports-individual-student: review
+  7-7-low-attendance-alerts: review
+  7-8-attendance-deadline-enforcement: review
   epic-7-retrospective: optional
 
   # Epic 8: Examinations & Grading

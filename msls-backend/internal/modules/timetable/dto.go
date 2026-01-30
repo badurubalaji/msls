@@ -302,3 +302,232 @@ func PeriodSlotToResponse(ps *models.PeriodSlot) PeriodSlotResponse {
 
 	return resp
 }
+
+// ========================================
+// Timetable DTOs
+// ========================================
+
+// TimetableResponse represents a timetable in API responses.
+type TimetableResponse struct {
+	ID               uuid.UUID                `json:"id"`
+	BranchID         uuid.UUID                `json:"branchId"`
+	BranchName       string                   `json:"branchName,omitempty"`
+	SectionID        uuid.UUID                `json:"sectionId"`
+	SectionName      string                   `json:"sectionName,omitempty"`
+	ClassName        string                   `json:"className,omitempty"`
+	AcademicYearID   uuid.UUID                `json:"academicYearId"`
+	AcademicYearName string                   `json:"academicYearName,omitempty"`
+	Name             string                   `json:"name"`
+	Description      string                   `json:"description,omitempty"`
+	Status           string                   `json:"status"`
+	EffectiveFrom    string                   `json:"effectiveFrom,omitempty"`
+	EffectiveTo      string                   `json:"effectiveTo,omitempty"`
+	PublishedAt      string                   `json:"publishedAt,omitempty"`
+	CreatedAt        string                   `json:"createdAt"`
+	UpdatedAt        string                   `json:"updatedAt"`
+	Entries          []TimetableEntryResponse `json:"entries,omitempty"`
+}
+
+// TimetableListResponse represents the response for listing timetables.
+type TimetableListResponse struct {
+	Timetables []TimetableResponse `json:"timetables"`
+	Total      int64               `json:"total"`
+}
+
+// CreateTimetableRequest represents the request body for creating a timetable.
+type CreateTimetableRequest struct {
+	BranchID       uuid.UUID `json:"branchId" binding:"required"`
+	SectionID      uuid.UUID `json:"sectionId" binding:"required"`
+	AcademicYearID uuid.UUID `json:"academicYearId" binding:"required"`
+	Name           string    `json:"name" binding:"required,max=100"`
+	Description    string    `json:"description"`
+	EffectiveFrom  string    `json:"effectiveFrom"` // YYYY-MM-DD format
+	EffectiveTo    string    `json:"effectiveTo"`   // YYYY-MM-DD format
+}
+
+// UpdateTimetableRequest represents the request body for updating a timetable.
+type UpdateTimetableRequest struct {
+	Name          *string `json:"name" binding:"omitempty,max=100"`
+	Description   *string `json:"description"`
+	EffectiveFrom *string `json:"effectiveFrom"`
+	EffectiveTo   *string `json:"effectiveTo"`
+}
+
+// TimetableFilter represents filters for listing timetables.
+type TimetableFilter struct {
+	TenantID       uuid.UUID
+	BranchID       *uuid.UUID
+	SectionID      *uuid.UUID
+	AcademicYearID *uuid.UUID
+	Status         *string
+}
+
+// TimetableToResponse converts a Timetable model to TimetableResponse.
+func TimetableToResponse(t *models.Timetable) TimetableResponse {
+	resp := TimetableResponse{
+		ID:             t.ID,
+		BranchID:       t.BranchID,
+		SectionID:      t.SectionID,
+		AcademicYearID: t.AcademicYearID,
+		Name:           t.Name,
+		Description:    t.Description,
+		Status:         string(t.Status),
+		CreatedAt:      t.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		UpdatedAt:      t.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
+	}
+
+	if t.Branch != nil {
+		resp.BranchName = t.Branch.Name
+	}
+
+	if t.Section != nil {
+		resp.SectionName = t.Section.Name
+		if t.Section.Class.ID != uuid.Nil {
+			resp.ClassName = t.Section.Class.Name
+		}
+	}
+
+	if t.AcademicYear != nil {
+		resp.AcademicYearName = t.AcademicYear.Name
+	}
+
+	if t.EffectiveFrom != nil {
+		resp.EffectiveFrom = t.EffectiveFrom.Format("2006-01-02")
+	}
+
+	if t.EffectiveTo != nil {
+		resp.EffectiveTo = t.EffectiveTo.Format("2006-01-02")
+	}
+
+	if t.PublishedAt != nil {
+		resp.PublishedAt = t.PublishedAt.Format("2006-01-02T15:04:05Z07:00")
+	}
+
+	if len(t.Entries) > 0 {
+		resp.Entries = make([]TimetableEntryResponse, len(t.Entries))
+		for i, e := range t.Entries {
+			resp.Entries[i] = TimetableEntryToResponse(&e)
+		}
+	}
+
+	return resp
+}
+
+// ========================================
+// Timetable Entry DTOs
+// ========================================
+
+// TimetableEntryResponse represents a timetable entry in API responses.
+type TimetableEntryResponse struct {
+	ID              uuid.UUID `json:"id"`
+	TimetableID     uuid.UUID `json:"timetableId"`
+	DayOfWeek       int       `json:"dayOfWeek"`
+	DayName         string    `json:"dayName"`
+	PeriodSlotID    uuid.UUID `json:"periodSlotId"`
+	PeriodSlotName  string    `json:"periodSlotName,omitempty"`
+	PeriodNumber    *int      `json:"periodNumber,omitempty"`
+	StartTime       string    `json:"startTime,omitempty"`
+	EndTime         string    `json:"endTime,omitempty"`
+	SubjectID       *string   `json:"subjectId,omitempty"`
+	SubjectName     string    `json:"subjectName,omitempty"`
+	SubjectCode     string    `json:"subjectCode,omitempty"`
+	StaffID         *string   `json:"staffId,omitempty"`
+	StaffName       string    `json:"staffName,omitempty"`
+	RoomNumber      string    `json:"roomNumber,omitempty"`
+	Notes           string    `json:"notes,omitempty"`
+	IsFreePeriod    bool      `json:"isFreePeriod"`
+	SlotType        string    `json:"slotType,omitempty"`
+}
+
+// CreateTimetableEntryRequest represents the request body for creating/updating a timetable entry.
+type CreateTimetableEntryRequest struct {
+	DayOfWeek    int        `json:"dayOfWeek" binding:"min=0,max=6"`
+	PeriodSlotID uuid.UUID  `json:"periodSlotId" binding:"required"`
+	SubjectID    *uuid.UUID `json:"subjectId"`
+	StaffID      *uuid.UUID `json:"staffId"`
+	RoomNumber   string     `json:"roomNumber"`
+	Notes        string     `json:"notes"`
+	IsFreePeriod bool       `json:"isFreePeriod"`
+}
+
+// BulkTimetableEntryRequest represents a request to update multiple entries.
+type BulkTimetableEntryRequest struct {
+	Entries []CreateTimetableEntryRequest `json:"entries" binding:"required"`
+}
+
+// TimetableEntryToResponse converts a TimetableEntry model to TimetableEntryResponse.
+func TimetableEntryToResponse(e *models.TimetableEntry) TimetableEntryResponse {
+	resp := TimetableEntryResponse{
+		ID:           e.ID,
+		TimetableID:  e.TimetableID,
+		DayOfWeek:    e.DayOfWeek,
+		DayName:      e.GetDayName(),
+		PeriodSlotID: e.PeriodSlotID,
+		RoomNumber:   e.RoomNumber,
+		Notes:        e.Notes,
+		IsFreePeriod: e.IsFreePeriod,
+	}
+
+	if e.PeriodSlot != nil {
+		resp.PeriodSlotName = e.PeriodSlot.Name
+		resp.PeriodNumber = e.PeriodSlot.PeriodNumber
+		resp.StartTime = e.PeriodSlot.StartTime
+		resp.EndTime = e.PeriodSlot.EndTime
+		resp.SlotType = string(e.PeriodSlot.SlotType)
+	}
+
+	if e.SubjectID != nil {
+		idStr := e.SubjectID.String()
+		resp.SubjectID = &idStr
+		if e.Subject != nil {
+			resp.SubjectName = e.Subject.Name
+			resp.SubjectCode = e.Subject.Code
+		}
+	}
+
+	if e.StaffID != nil {
+		idStr := e.StaffID.String()
+		resp.StaffID = &idStr
+		if e.Staff != nil {
+			resp.StaffName = e.Staff.FirstName
+			if e.Staff.LastName != "" {
+				resp.StaffName += " " + e.Staff.LastName
+			}
+		}
+	}
+
+	return resp
+}
+
+// ========================================
+// Conflict Detection DTOs
+// ========================================
+
+// TeacherConflict represents a conflict when a teacher is double-booked.
+type TeacherConflict struct {
+	StaffID      uuid.UUID `json:"staffId"`
+	StaffName    string    `json:"staffName"`
+	DayOfWeek    int       `json:"dayOfWeek"`
+	DayName      string    `json:"dayName"`
+	PeriodSlotID uuid.UUID `json:"periodSlotId"`
+	PeriodName   string    `json:"periodName"`
+	StartTime    string    `json:"startTime"`
+	EndTime      string    `json:"endTime"`
+	SectionID    uuid.UUID `json:"sectionId"`
+	SectionName  string    `json:"sectionName"`
+	ClassName    string    `json:"className"`
+	SubjectName  string    `json:"subjectName"`
+}
+
+// ConflictCheckResponse represents the response for conflict checking.
+type ConflictCheckResponse struct {
+	HasConflicts bool              `json:"hasConflicts"`
+	Conflicts    []TeacherConflict `json:"conflicts"`
+}
+
+// TeacherScheduleResponse represents a teacher's full schedule.
+type TeacherScheduleResponse struct {
+	StaffID   uuid.UUID                `json:"staffId"`
+	StaffName string                   `json:"staffName"`
+	Entries   []TimetableEntryResponse `json:"entries"`
+}

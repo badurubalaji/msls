@@ -6,6 +6,7 @@ import { Routes } from '@angular/router';
  * Routes:
  * - /students              - Student list page
  * - /students/new          - Create new student
+ * - /students/import       - Bulk import students
  * - /students/promotion    - Promotion wizard
  * - /students/:id          - View student details
  * - /students/:id/edit     - Edit student
@@ -26,6 +27,14 @@ export const STUDENTS_ROUTES: Routes = [
         (m) => m.StudentFormComponent
       ),
     title: 'Add Student',
+  },
+  {
+    path: 'import',
+    loadComponent: () =>
+      import('./pages/student-import/student-import.component').then(
+        (m) => m.StudentImportComponent
+      ),
+    title: 'Bulk Import Students',
   },
   {
     path: 'promotion',

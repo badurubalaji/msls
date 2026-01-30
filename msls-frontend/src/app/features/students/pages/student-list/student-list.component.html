@@ -13,6 +13,10 @@
         </div>
       </div>
       <div class="header-actions">
+        <button type="button" class="import-btn" (click)="router.navigate(['/students/import'])">
+          <i class="fa-solid fa-file-import"></i>
+          <span>Bulk Import</span>
+        </button>
         <button type="button" class="promotion-btn" (click)="router.navigate(['/students/promotion'])">
           <i class="fa-solid fa-arrow-up-right-dots"></i>
           <span>Promotion</span>

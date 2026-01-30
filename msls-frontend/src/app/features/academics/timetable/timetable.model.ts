@@ -205,3 +205,157 @@ export interface PeriodSlotFilter {
   slotType?: PeriodSlotType;
   isActive?: boolean;
 }
+
+// ========================================
+// Timetable Models
+// ========================================
+
+export type TimetableStatus = 'draft' | 'published' | 'archived';
+
+export const TIMETABLE_STATUSES: { value: TimetableStatus; label: string; color: string }[] = [
+  { value: 'draft', label: 'Draft', color: 'bg-yellow-100 text-yellow-700' },
+  { value: 'published', label: 'Published', color: 'bg-green-100 text-green-700' },
+  { value: 'archived', label: 'Archived', color: 'bg-gray-100 text-gray-600' },
+];
+
+export interface Timetable {
+  id: string;
+  branchId: string;
+  branchName?: string;
+  sectionId: string;
+  sectionName?: string;
+  className?: string;
+  academicYearId: string;
+  academicYearName?: string;
+  name: string;
+  description?: string;
+  status: TimetableStatus;
+  effectiveFrom?: string;
+  effectiveTo?: string;
+  publishedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+  entries?: TimetableEntry[];
+}
+
+export interface CreateTimetableRequest {
+  branchId: string;
+  sectionId: string;
+  academicYearId: string;
+  name: string;
+  description?: string;
+  effectiveFrom?: string;
+  effectiveTo?: string;
+}
+
+export interface UpdateTimetableRequest {
+  name?: string;
+  description?: string;
+  effectiveFrom?: string;
+  effectiveTo?: string;
+}
+
+export interface TimetableListResponse {
+  timetables: Timetable[];
+  total: number;
+}
+
+export interface TimetableFilter {
+  branchId?: string;
+  sectionId?: string;
+  academicYearId?: string;
+  status?: TimetableStatus;
+}
+
+// ========================================
+// Timetable Entry Models
+// ========================================
+
+export interface TimetableEntry {
+  id: string;
+  timetableId: string;
+  dayOfWeek: number;
+  dayName: string;
+  periodSlotId: string;
+  periodSlotName?: string;
+  periodNumber?: number;
+  startTime?: string;
+  endTime?: string;
+  subjectId?: string;
+  subjectName?: string;
+  subjectCode?: string;
+  staffId?: string;
+  staffName?: string;
+  roomNumber?: string;
+  notes?: string;
+  isFreePeriod: boolean;
+  slotType?: PeriodSlotType;
+  timetable?: {
+    id: string;
+    branchId: string;
+    sectionId: string;
+    sectionName?: string;
+    className?: string;
+    academicYearId: string;
+  };
+}
+
+export interface CreateTimetableEntryRequest {
+  dayOfWeek: number;
+  periodSlotId: string;
+  subjectId?: string;
+  staffId?: string;
+  roomNumber?: string;
+  notes?: string;
+  isFreePeriod?: boolean;
+}
+
+export interface BulkTimetableEntryRequest {
+  entries: CreateTimetableEntryRequest[];
+}
+
+// ========================================
+// Conflict Detection Models
+// ========================================
+
+export interface TeacherConflict {
+  staffId: string;
+  staffName: string;
+  dayOfWeek: number;
+  dayName: string;
+  periodSlotId: string;
+  periodName: string;
+  startTime: string;
+  endTime: string;
+  sectionId: string;
+  sectionName: string;
+  className: string;
+  subjectName: string;
+}
+
+export interface ConflictCheckResponse {
+  hasConflicts: boolean;
+  conflicts: TeacherConflict[];
+}
+
+export interface TeacherScheduleResponse {
+  staffId: string;
+  staffName?: string;
+  entries: TimetableEntry[];
+}
+
+// ========================================
+// Grid View Types (for Timetable Builder)
+// ========================================
+
+export interface TimetableGridCell {
+  dayOfWeek: number;
+  periodSlot: PeriodSlot;
+  entry?: TimetableEntry;
+}
+
+export interface TimetableGrid {
+  days: number[]; // Working days
+  periodSlots: PeriodSlot[];
+  entries: Map<string, TimetableEntry>; // key: "dayOfWeek-periodSlotId"
+}

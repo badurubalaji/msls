@@ -30,7 +30,7 @@ import { ToastService } from '../../../../shared/services/toast.service';
     <div class="page">
       <!-- Breadcrumb -->
       <div class="breadcrumb">
-        <a routerLink="/payroll">
+        <a routerLink="/payroll/runs">
           <i class="fa-solid fa-arrow-left"></i>
           Back to Pay Runs
         </a>

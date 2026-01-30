@@ -68,6 +68,20 @@ import { RouterLink } from '@angular/router';
             <i class="fa-solid fa-chevron-right"></i>
           </div>
         </a>
+
+        <!-- Timetable Builder Card -->
+        <a routerLink="list" class="config-card featured">
+          <div class="card-icon builder">
+            <i class="fa-solid fa-calendar-plus"></i>
+          </div>
+          <div class="card-content">
+            <h3>Timetable Builder</h3>
+            <p>Create and manage class timetables with drag-and-drop interface</p>
+          </div>
+          <div class="card-arrow">
+            <i class="fa-solid fa-chevron-right"></i>
+          </div>
+        </a>
       </div>
 
       <!-- Quick Info -->
@@ -102,6 +116,13 @@ import { RouterLink } from '@angular/router';
               <p>Map day patterns to weekdays for each branch</p>
             </div>
           </div>
+          <div class="info-step">
+            <div class="step-number">5</div>
+            <div class="step-content">
+              <h4>Build Timetables</h4>
+              <p>Create class timetables, assign subjects and teachers to periods</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -121,6 +142,9 @@ import { RouterLink } from '@angular/router';
     .card-icon.shifts { background: #dbeafe; color: #2563eb; }
     .card-icon.patterns { background: #e0e7ff; color: #4f46e5; }
     .card-icon.slots { background: #dcfce7; color: #16a34a; }
+    .card-icon.builder { background: linear-gradient(135deg, #4f46e5, #7c3aed); color: white; }
+    .config-card.featured { border: 2px solid #c7d2fe; background: linear-gradient(135deg, #fafafe, #f5f3ff); }
+    .config-card.featured:hover { border-color: #818cf8; box-shadow: 0 4px 16px rgba(79, 70, 229, 0.15); }
     .card-content { flex: 1; }
     .card-content h3 { margin: 0 0 0.25rem; font-size: 1rem; font-weight: 600; color: #1e293b; }
     .card-content p { margin: 0; font-size: 0.8125rem; color: #64748b; line-height: 1.4; }

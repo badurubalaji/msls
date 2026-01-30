@@ -139,3 +139,83 @@ func (PeriodSlot) TableName() string {
 func (p PeriodSlot) IsTeachingPeriod() bool {
 	return p.SlotType == PeriodSlotTypeRegular || p.SlotType == PeriodSlotTypeShort
 }
+
+// TimetableStatus represents the status of a timetable.
+type TimetableStatus string
+
+const (
+	TimetableStatusDraft     TimetableStatus = "draft"
+	TimetableStatusPublished TimetableStatus = "published"
+	TimetableStatusArchived  TimetableStatus = "archived"
+)
+
+// Timetable represents a section's timetable.
+type Timetable struct {
+	ID             uuid.UUID       `gorm:"type:uuid;primaryKey;default:uuid_generate_v7()"`
+	TenantID       uuid.UUID       `gorm:"type:uuid;not null"`
+	BranchID       uuid.UUID       `gorm:"type:uuid;not null"`
+	Branch         *Branch         `gorm:"foreignKey:BranchID"`
+	SectionID      uuid.UUID       `gorm:"type:uuid;not null"`
+	Section        *Section        `gorm:"foreignKey:SectionID"`
+	AcademicYearID uuid.UUID       `gorm:"type:uuid;not null"`
+	AcademicYear   *AcademicYear   `gorm:"foreignKey:AcademicYearID"`
+
+	Name        string          `gorm:"type:varchar(100);not null"`
+	Description string          `gorm:"type:text"`
+	Status      TimetableStatus `gorm:"type:varchar(20);not null;default:'draft'"`
+
+	EffectiveFrom *time.Time `gorm:"type:date"`
+	EffectiveTo   *time.Time `gorm:"type:date"`
+	PublishedAt   *time.Time `gorm:"type:timestamptz"`
+	PublishedBy   *uuid.UUID `gorm:"type:uuid"`
+
+	CreatedAt time.Time  `gorm:"not null;default:now()"`
+	UpdatedAt time.Time  `gorm:"not null;default:now()"`
+	DeletedAt *time.Time `gorm:"type:timestamptz"`
+	CreatedBy *uuid.UUID `gorm:"type:uuid"`
+	UpdatedBy *uuid.UUID `gorm:"type:uuid"`
+	Version   int        `gorm:"not null;default:1"`
+
+	// Relationships
+	Entries []TimetableEntry `gorm:"foreignKey:TimetableID"`
+}
+
+// TableName returns the table name for Timetable.
+func (Timetable) TableName() string {
+	return "timetables"
+}
+
+// TimetableEntry represents a single entry in a timetable (period assignment).
+type TimetableEntry struct {
+	ID           uuid.UUID   `gorm:"type:uuid;primaryKey;default:uuid_generate_v7()"`
+	TenantID     uuid.UUID   `gorm:"type:uuid;not null"`
+	TimetableID  uuid.UUID   `gorm:"type:uuid;not null"`
+	Timetable    *Timetable  `gorm:"foreignKey:TimetableID"`
+	DayOfWeek    int         `gorm:"not null"` // 0=Sunday, 1=Monday, ..., 6=Saturday
+	PeriodSlotID uuid.UUID   `gorm:"type:uuid;not null"`
+	PeriodSlot   *PeriodSlot `gorm:"foreignKey:PeriodSlotID"`
+	SubjectID    *uuid.UUID  `gorm:"type:uuid"`
+	Subject      *Subject    `gorm:"foreignKey:SubjectID"`
+	StaffID      *uuid.UUID  `gorm:"type:uuid"`
+	Staff        *Staff      `gorm:"foreignKey:StaffID"`
+	RoomNumber   string      `gorm:"type:varchar(50)"`
+	Notes        string      `gorm:"type:text"`
+	IsFreePeriod bool        `gorm:"not null;default:false"`
+
+	CreatedAt time.Time `gorm:"not null;default:now()"`
+	UpdatedAt time.Time `gorm:"not null;default:now()"`
+}
+
+// TableName returns the table name for TimetableEntry.
+func (TimetableEntry) TableName() string {
+	return "timetable_entries"
+}
+
+// GetDayName returns the name of the day for the entry.
+func (e TimetableEntry) GetDayName() string {
+	days := []string{"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"}
+	if e.DayOfWeek >= 0 && e.DayOfWeek < 7 {
+		return days[e.DayOfWeek]
+	}
+	return ""
+}

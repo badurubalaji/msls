@@ -1,6 +1,7 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { MslsModalComponent } from '../../../shared/components/modal/modal.component';
 import { SalaryComponentFormComponent } from './salary-component-form.component';
 import { SalaryService } from './salary.service';
@@ -10,12 +11,15 @@ import { ToastService } from '../../../shared/services/toast.service';
 @Component({
   selector: 'msls-salary-components',
   standalone: true,
-  imports: [CommonModule, FormsModule, MslsModalComponent, SalaryComponentFormComponent],
+  imports: [CommonModule, FormsModule, RouterLink, MslsModalComponent, SalaryComponentFormComponent],
   template: `
     <div class="page">
       <!-- Page Header -->
       <div class="page-header">
         <div class="header-content">
+          <a routerLink="/payroll" class="back-link">
+            <i class="fa-solid fa-arrow-left"></i>
+          </a>
           <div class="header-icon">
             <i class="fa-solid fa-money-bill-wave"></i>
           </div>
@@ -269,6 +273,24 @@ import { ToastService } from '../../../shared/services/toast.service';
       display: flex;
       align-items: center;
       gap: 1rem;
+    }
+
+    .back-link {
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 0.5rem;
+      background: #f1f5f9;
+      color: #64748b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .back-link:hover {
+      background: #e2e8f0;
+      color: #1e293b;
     }
 
     .header-icon {

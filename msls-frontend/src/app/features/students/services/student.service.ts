@@ -18,6 +18,7 @@ import {
   BulkOperation,
   BulkStatusUpdateRequest,
   ExportRequest,
+  ImportResult,
 } from '../models/student.model';
 
 /** API endpoint for students */
@@ -472,5 +473,48 @@ export class StudentService {
    */
   downloadExportResult(operationId: string): void {
     window.open(`/api/v1/bulk-operations/${operationId}/result`, '_blank');
+  }
+
+  // =========================================================================
+  // Import Operations
+  // =========================================================================
+
+  /**
+   * Download the student import template.
+   */
+  downloadImportTemplate(): void {
+    this.api.downloadFile(`${STUDENTS_ENDPOINT}/import/template`, 'student_import_template.xlsx');
+  }
+
+  /**
+   * Import students from a file.
+   * @param file - Excel or CSV file
+   * @param branchId - Branch ID
+   * @param academicYearId - Academic year ID
+   */
+  importStudents(
+    file: File,
+    branchId: string,
+    academicYearId: string
+  ): Observable<ImportResult> {
+    this._loading.set(true);
+    this._error.set(null);
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('branch_id', branchId);
+    formData.append('academic_year_id', academicYearId);
+
+    return this.api.post<ImportResult>(`${STUDENTS_ENDPOINT}/import`, formData).pipe(
+      tap(() => {
+        // Refresh the list after import
+        this.refresh().subscribe();
+      }),
+      catchError((error) => {
+        this._error.set(error.message || 'Failed to import students');
+        return throwError(() => error);
+      }),
+      finalize(() => this._loading.set(false))
+    );
   }
 }

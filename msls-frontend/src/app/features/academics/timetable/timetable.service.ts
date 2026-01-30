@@ -28,6 +28,16 @@ import {
   PeriodSlotFilter,
   CreatePeriodSlotRequest,
   UpdatePeriodSlotRequest,
+  Timetable,
+  TimetableListResponse,
+  TimetableFilter,
+  CreateTimetableRequest,
+  UpdateTimetableRequest,
+  TimetableEntry,
+  CreateTimetableEntryRequest,
+  BulkTimetableEntryRequest,
+  ConflictCheckResponse,
+  TeacherScheduleResponse,
 } from './timetable.model';
 
 /**
@@ -188,5 +198,112 @@ export class TimetableService {
     if (filter.isActive !== undefined) params['is_active'] = String(filter.isActive);
 
     return params;
+  }
+
+  // ========================================
+  // Timetable Methods
+  // ========================================
+
+  getTimetables(filter?: TimetableFilter): Observable<Timetable[]> {
+    const params = this.buildTimetableFilterParams(filter);
+    return this.apiService.get<TimetableListResponse>('/timetables', { params }).pipe(
+      map(response => response.timetables || [])
+    );
+  }
+
+  getTimetablesWithTotal(filter?: TimetableFilter): Observable<TimetableListResponse> {
+    const params = this.buildTimetableFilterParams(filter);
+    return this.apiService.get<TimetableListResponse>('/timetables', { params });
+  }
+
+  getTimetable(id: string): Observable<Timetable> {
+    return this.apiService.get<Timetable>(`/timetables/${id}`);
+  }
+
+  createTimetable(data: CreateTimetableRequest): Observable<Timetable> {
+    return this.apiService.post<Timetable>('/timetables', data);
+  }
+
+  updateTimetable(id: string, data: UpdateTimetableRequest): Observable<Timetable> {
+    return this.apiService.put<Timetable>(`/timetables/${id}`, data);
+  }
+
+  deleteTimetable(id: string): Observable<void> {
+    return this.apiService.delete<void>(`/timetables/${id}`);
+  }
+
+  publishTimetable(id: string): Observable<Timetable> {
+    return this.apiService.post<Timetable>(`/timetables/${id}/publish`, {});
+  }
+
+  archiveTimetable(id: string): Observable<Timetable> {
+    return this.apiService.post<Timetable>(`/timetables/${id}/archive`, {});
+  }
+
+  private buildTimetableFilterParams(filter?: TimetableFilter): Record<string, string> {
+    const params: Record<string, string> = {};
+    if (!filter) return params;
+
+    if (filter.branchId) params['branch_id'] = filter.branchId;
+    if (filter.sectionId) params['section_id'] = filter.sectionId;
+    if (filter.academicYearId) params['academic_year_id'] = filter.academicYearId;
+    if (filter.status) params['status'] = filter.status;
+
+    return params;
+  }
+
+  // ========================================
+  // Timetable Entry Methods
+  // ========================================
+
+  getTimetableEntries(timetableId: string): Observable<TimetableEntry[]> {
+    return this.apiService.get<TimetableEntry[]>(`/timetables/${timetableId}/entries`);
+  }
+
+  upsertTimetableEntry(timetableId: string, data: CreateTimetableEntryRequest): Observable<TimetableEntry> {
+    return this.apiService.post<TimetableEntry>(`/timetables/${timetableId}/entries`, data);
+  }
+
+  bulkUpsertTimetableEntries(timetableId: string, data: BulkTimetableEntryRequest): Observable<void> {
+    return this.apiService.post<void>(`/timetables/${timetableId}/entries/bulk`, data);
+  }
+
+  deleteTimetableEntry(timetableId: string, entryId: string): Observable<void> {
+    return this.apiService.delete<void>(`/timetables/${timetableId}/entries/${entryId}`);
+  }
+
+  // ========================================
+  // Conflict Detection Methods
+  // ========================================
+
+  checkConflicts(
+    staffId: string,
+    dayOfWeek: number,
+    periodSlotId: string,
+    excludeTimetableId?: string
+  ): Observable<ConflictCheckResponse> {
+    const params: Record<string, string> = {
+      staff_id: staffId,
+      day_of_week: String(dayOfWeek),
+      period_slot_id: periodSlotId,
+    };
+    if (excludeTimetableId) {
+      params['exclude_timetable_id'] = excludeTimetableId;
+    }
+    return this.apiService.get<ConflictCheckResponse>('/timetables/conflicts', { params });
+  }
+
+  getTeacherSchedule(staffId: string, academicYearId: string): Observable<TeacherScheduleResponse> {
+    return this.apiService.get<TeacherScheduleResponse>(
+      `/timetables/teacher/${staffId}`,
+      { params: { academic_year_id: academicYearId } }
+    );
+  }
+
+  getMySchedule(academicYearId: string): Observable<TeacherScheduleResponse> {
+    return this.apiService.get<TeacherScheduleResponse>(
+      '/timetables/teacher/me',
+      { params: { academic_year_id: academicYearId } }
+    );
   }
 }

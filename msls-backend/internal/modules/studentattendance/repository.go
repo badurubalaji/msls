@@ -324,3 +324,462 @@ func (r *Repository) GetFirstAttendanceRecord(ctx context.Context, tenantID, sec
 func (r *Repository) DB() *gorm.DB {
 	return r.db
 }
+
+// ============================================================================
+// Period-wise Attendance Repository Methods (Story 7.2)
+// ============================================================================
+
+// GetPeriodAttendance retrieves attendance records for a section and period on a specific date.
+func (r *Repository) GetPeriodAttendance(ctx context.Context, tenantID, sectionID, periodID uuid.UUID, date time.Time) ([]models.StudentAttendance, error) {
+	var attendance []models.StudentAttendance
+	err := r.db.WithContext(ctx).
+		Preload("Student").
+		Preload("MarkedByUser").
+		Preload("PeriodSlot").
+		Preload("TimetableEntry").
+		Preload("TimetableEntry.Subject").
+		Where("tenant_id = ? AND section_id = ? AND period_id = ? AND attendance_date = ?",
+			tenantID, sectionID, periodID, date.Format("2006-01-02")).
+		Order("created_at ASC").
+		Find(&attendance).Error
+	if err != nil {
+		return nil, fmt.Errorf("get period attendance: %w", err)
+	}
+	return attendance, nil
+}
+
+// SavePeriodAttendance saves or updates period-specific attendance records.
+func (r *Repository) SavePeriodAttendance(ctx context.Context, tenantID uuid.UUID, records []models.StudentAttendance) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		for _, record := range records {
+			// Use upsert with period_id in the match criteria
+			err := tx.Where("tenant_id = ? AND student_id = ? AND attendance_date = ? AND period_id = ?",
+				tenantID, record.StudentID, record.AttendanceDate.Format("2006-01-02"), record.PeriodID).
+				Assign(models.StudentAttendance{
+					SectionID:        record.SectionID,
+					PeriodID:         record.PeriodID,
+					TimetableEntryID: record.TimetableEntryID,
+					Status:           record.Status,
+					LateArrivalTime:  record.LateArrivalTime,
+					Remarks:          record.Remarks,
+					MarkedBy:         record.MarkedBy,
+					MarkedAt:         record.MarkedAt,
+					UpdatedAt:        time.Now(),
+				}).
+				FirstOrCreate(&record).Error
+			if err != nil {
+				if strings.Contains(err.Error(), "duplicate key") {
+					return ErrDuplicateAttendance
+				}
+				return fmt.Errorf("save period attendance record: %w", err)
+			}
+		}
+		return nil
+	})
+}
+
+// GetDailyPeriodAttendance retrieves all period attendance records for a section on a date.
+func (r *Repository) GetDailyPeriodAttendance(ctx context.Context, tenantID, sectionID uuid.UUID, date time.Time) ([]models.StudentAttendance, error) {
+	var attendance []models.StudentAttendance
+	err := r.db.WithContext(ctx).
+		Preload("Student").
+		Preload("PeriodSlot").
+		Preload("TimetableEntry").
+		Preload("TimetableEntry.Subject").
+		Where("tenant_id = ? AND section_id = ? AND attendance_date = ? AND period_id IS NOT NULL",
+			tenantID, sectionID, date.Format("2006-01-02")).
+		Order("period_id ASC, student_id ASC").
+		Find(&attendance).Error
+	if err != nil {
+		return nil, fmt.Errorf("get daily period attendance: %w", err)
+	}
+	return attendance, nil
+}
+
+// GetPeriodAttendanceCount returns the count of marked attendance for a period.
+func (r *Repository) GetPeriodAttendanceCount(ctx context.Context, tenantID, sectionID, periodID uuid.UUID, date time.Time) (int64, error) {
+	var count int64
+	err := r.db.WithContext(ctx).
+		Model(&models.StudentAttendance{}).
+		Where("tenant_id = ? AND section_id = ? AND period_id = ? AND attendance_date = ?",
+			tenantID, sectionID, periodID, date.Format("2006-01-02")).
+		Count(&count).Error
+	if err != nil {
+		return 0, fmt.Errorf("count period attendance: %w", err)
+	}
+	return count, nil
+}
+
+// GetFirstPeriodAttendanceRecord returns the first attendance record for a period.
+func (r *Repository) GetFirstPeriodAttendanceRecord(ctx context.Context, tenantID, sectionID, periodID uuid.UUID, date time.Time) (*models.StudentAttendance, error) {
+	var attendance models.StudentAttendance
+	err := r.db.WithContext(ctx).
+		Preload("MarkedByUser").
+		Where("tenant_id = ? AND section_id = ? AND period_id = ? AND attendance_date = ?",
+			tenantID, sectionID, periodID, date.Format("2006-01-02")).
+		Order("marked_at ASC").
+		First(&attendance).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("get first period attendance record: %w", err)
+	}
+	return &attendance, nil
+}
+
+// GetTimetableEntriesForSection retrieves timetable entries for a section on a specific day.
+func (r *Repository) GetTimetableEntriesForSection(ctx context.Context, tenantID, sectionID uuid.UUID, dayOfWeek int) ([]models.TimetableEntry, error) {
+	var entries []models.TimetableEntry
+
+	// Find published timetable for section
+	var timetable models.Timetable
+	err := r.db.WithContext(ctx).
+		Where("tenant_id = ? AND section_id = ? AND status = ? AND deleted_at IS NULL",
+			tenantID, sectionID, models.TimetableStatusPublished).
+		First(&timetable).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil // No published timetable
+		}
+		return nil, fmt.Errorf("get published timetable: %w", err)
+	}
+
+	// Get entries for this day
+	err = r.db.WithContext(ctx).
+		Preload("PeriodSlot").
+		Preload("Subject").
+		Preload("Staff").
+		Where("tenant_id = ? AND timetable_id = ? AND day_of_week = ?",
+			tenantID, timetable.ID, dayOfWeek).
+		Order("period_slot_id ASC").
+		Find(&entries).Error
+	if err != nil {
+		return nil, fmt.Errorf("get timetable entries: %w", err)
+	}
+	return entries, nil
+}
+
+// GetPeriodSlotByID retrieves a period slot by ID.
+func (r *Repository) GetPeriodSlotByID(ctx context.Context, tenantID, periodID uuid.UUID) (*models.PeriodSlot, error) {
+	var slot models.PeriodSlot
+	err := r.db.WithContext(ctx).
+		Where("tenant_id = ? AND id = ?", tenantID, periodID).
+		First(&slot).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrPeriodNotFound
+		}
+		return nil, fmt.Errorf("get period slot: %w", err)
+	}
+	return &slot, nil
+}
+
+// GetTimetableEntryByID retrieves a timetable entry by ID.
+func (r *Repository) GetTimetableEntryByID(ctx context.Context, tenantID, entryID uuid.UUID) (*models.TimetableEntry, error) {
+	var entry models.TimetableEntry
+	err := r.db.WithContext(ctx).
+		Preload("PeriodSlot").
+		Preload("Subject").
+		Preload("Staff").
+		Preload("Timetable").
+		Preload("Timetable.Section").
+		Where("tenant_id = ? AND id = ?", tenantID, entryID).
+		First(&entry).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrTimetableEntryNotFound
+		}
+		return nil, fmt.Errorf("get timetable entry: %w", err)
+	}
+	return &entry, nil
+}
+
+// GetSubjectAttendanceForStudent retrieves period attendance for a student by subject.
+func (r *Repository) GetSubjectAttendanceForStudent(ctx context.Context, tenantID, studentID, subjectID uuid.UUID, dateFrom, dateTo *time.Time) ([]models.StudentAttendance, error) {
+	query := r.db.WithContext(ctx).
+		Preload("TimetableEntry").
+		Preload("TimetableEntry.Subject").
+		Preload("PeriodSlot").
+		Joins("JOIN timetable_entries ON timetable_entries.id = student_attendance.timetable_entry_id").
+		Where("student_attendance.tenant_id = ? AND student_attendance.student_id = ? AND timetable_entries.subject_id = ? AND student_attendance.period_id IS NOT NULL",
+			tenantID, studentID, subjectID)
+
+	if dateFrom != nil {
+		query = query.Where("student_attendance.attendance_date >= ?", dateFrom.Format("2006-01-02"))
+	}
+	if dateTo != nil {
+		query = query.Where("student_attendance.attendance_date <= ?", dateTo.Format("2006-01-02"))
+	}
+
+	var attendance []models.StudentAttendance
+	err := query.Order("student_attendance.attendance_date DESC").Find(&attendance).Error
+	if err != nil {
+		return nil, fmt.Errorf("get subject attendance: %w", err)
+	}
+	return attendance, nil
+}
+
+// ============================================================================
+// Attendance Audit Repository Methods (Story 7.3)
+// ============================================================================
+
+// CreateAuditRecord creates a new audit record for an attendance change.
+func (r *Repository) CreateAuditRecord(ctx context.Context, audit *models.StudentAttendanceAudit) error {
+	if err := r.db.WithContext(ctx).Create(audit).Error; err != nil {
+		return fmt.Errorf("create audit record: %w", err)
+	}
+	return nil
+}
+
+// GetAuditTrail retrieves all audit records for an attendance entry.
+func (r *Repository) GetAuditTrail(ctx context.Context, tenantID, attendanceID uuid.UUID) ([]models.StudentAttendanceAudit, error) {
+	var audits []models.StudentAttendanceAudit
+	err := r.db.WithContext(ctx).
+		Preload("ChangedByUser").
+		Where("tenant_id = ? AND attendance_id = ?", tenantID, attendanceID).
+		Order("changed_at DESC").
+		Find(&audits).Error
+	if err != nil {
+		return nil, fmt.Errorf("get audit trail: %w", err)
+	}
+	return audits, nil
+}
+
+// UpdateAttendanceWithAudit updates an attendance record and creates an audit entry.
+func (r *Repository) UpdateAttendanceWithAudit(ctx context.Context, attendance *models.StudentAttendance, audit *models.StudentAttendanceAudit) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// Update attendance record
+		if err := tx.Save(attendance).Error; err != nil {
+			return fmt.Errorf("update attendance: %w", err)
+		}
+
+		// Create audit record
+		if err := tx.Create(audit).Error; err != nil {
+			return fmt.Errorf("create audit: %w", err)
+		}
+
+		return nil
+	})
+}
+
+// GetUserByID retrieves a user by ID.
+func (r *Repository) GetUserByID(ctx context.Context, tenantID, userID uuid.UUID) (*models.User, error) {
+	var user models.User
+	err := r.db.WithContext(ctx).
+		Where("tenant_id = ? AND id = ?", tenantID, userID).
+		First(&user).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("user not found")
+		}
+		return nil, fmt.Errorf("get user: %w", err)
+	}
+	return &user, nil
+}
+
+// ============================================================================
+// Calendar & Reports Repository Methods (Stories 7.4-7.8)
+// ============================================================================
+
+// GetStudentMonthlyAttendance retrieves a student's attendance for a specific month.
+func (r *Repository) GetStudentMonthlyAttendance(ctx context.Context, tenantID, studentID uuid.UUID, year, month int) ([]models.StudentAttendance, error) {
+	startDate := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
+	endDate := startDate.AddDate(0, 1, -1)
+
+	var attendance []models.StudentAttendance
+	err := r.db.WithContext(ctx).
+		Where("tenant_id = ? AND student_id = ? AND attendance_date >= ? AND attendance_date <= ? AND period_id IS NULL",
+			tenantID, studentID, startDate.Format("2006-01-02"), endDate.Format("2006-01-02")).
+		Order("attendance_date ASC").
+		Find(&attendance).Error
+	if err != nil {
+		return nil, fmt.Errorf("get student monthly attendance: %w", err)
+	}
+	return attendance, nil
+}
+
+// GetStudentAttendanceRange retrieves attendance for a date range.
+func (r *Repository) GetStudentAttendanceRange(ctx context.Context, tenantID, studentID uuid.UUID, dateFrom, dateTo time.Time) ([]models.StudentAttendance, error) {
+	var attendance []models.StudentAttendance
+	err := r.db.WithContext(ctx).
+		Where("tenant_id = ? AND student_id = ? AND attendance_date >= ? AND attendance_date <= ? AND period_id IS NULL",
+			tenantID, studentID, dateFrom.Format("2006-01-02"), dateTo.Format("2006-01-02")).
+		Order("attendance_date ASC").
+		Find(&attendance).Error
+	if err != nil {
+		return nil, fmt.Errorf("get student attendance range: %w", err)
+	}
+	return attendance, nil
+}
+
+// GetSectionAttendanceStats retrieves attendance statistics for a section.
+func (r *Repository) GetSectionAttendanceStats(ctx context.Context, tenantID, sectionID uuid.UUID, dateFrom, dateTo time.Time) (float64, error) {
+	var result struct {
+		TotalPresent int64
+		TotalRecords int64
+	}
+
+	err := r.db.WithContext(ctx).
+		Model(&models.StudentAttendance{}).
+		Select("COUNT(CASE WHEN status IN ('present', 'late', 'half_day') THEN 1 END) as total_present, COUNT(*) as total_records").
+		Where("tenant_id = ? AND section_id = ? AND attendance_date >= ? AND attendance_date <= ? AND period_id IS NULL",
+			tenantID, sectionID, dateFrom.Format("2006-01-02"), dateTo.Format("2006-01-02")).
+		Scan(&result).Error
+	if err != nil {
+		return 0, fmt.Errorf("get section attendance stats: %w", err)
+	}
+
+	if result.TotalRecords == 0 {
+		return 0, nil
+	}
+	return float64(result.TotalPresent) / float64(result.TotalRecords) * 100, nil
+}
+
+// GetClassMonthlyAttendance retrieves all attendance for a section for a month.
+func (r *Repository) GetClassMonthlyAttendance(ctx context.Context, tenantID, sectionID uuid.UUID, year, month int) ([]models.StudentAttendance, error) {
+	startDate := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
+	endDate := startDate.AddDate(0, 1, -1)
+
+	var attendance []models.StudentAttendance
+	err := r.db.WithContext(ctx).
+		Preload("Student").
+		Where("tenant_id = ? AND section_id = ? AND attendance_date >= ? AND attendance_date <= ? AND period_id IS NULL",
+			tenantID, sectionID, startDate.Format("2006-01-02"), endDate.Format("2006-01-02")).
+		Order("student_id, attendance_date").
+		Find(&attendance).Error
+	if err != nil {
+		return nil, fmt.Errorf("get class monthly attendance: %w", err)
+	}
+	return attendance, nil
+}
+
+// GetLowAttendanceStudents retrieves students below attendance threshold.
+func (r *Repository) GetLowAttendanceStudents(ctx context.Context, tenantID uuid.UUID, dateFrom, dateTo time.Time, threshold float64) ([]struct {
+	StudentID    uuid.UUID
+	SectionID    uuid.UUID
+	TotalPresent int64
+	TotalRecords int64
+}, error) {
+	var results []struct {
+		StudentID    uuid.UUID
+		SectionID    uuid.UUID
+		TotalPresent int64
+		TotalRecords int64
+	}
+
+	subquery := r.db.WithContext(ctx).
+		Model(&models.StudentAttendance{}).
+		Select("student_id, section_id, COUNT(CASE WHEN status IN ('present', 'late', 'half_day') THEN 1 END) as total_present, COUNT(*) as total_records").
+		Where("tenant_id = ? AND attendance_date >= ? AND attendance_date <= ? AND period_id IS NULL",
+			tenantID, dateFrom.Format("2006-01-02"), dateTo.Format("2006-01-02")).
+		Group("student_id, section_id").
+		Having("CAST(COUNT(CASE WHEN status IN ('present', 'late', 'half_day') THEN 1 END) AS FLOAT) / NULLIF(COUNT(*), 0) * 100 < ?", threshold)
+
+	err := subquery.Scan(&results).Error
+	if err != nil {
+		return nil, fmt.Errorf("get low attendance students: %w", err)
+	}
+	return results, nil
+}
+
+// GetUnmarkedSections retrieves sections without attendance for a date.
+func (r *Repository) GetUnmarkedSections(ctx context.Context, tenantID uuid.UUID, date time.Time) ([]uuid.UUID, error) {
+	var allSections []models.Section
+	err := r.db.WithContext(ctx).
+		Where("tenant_id = ? AND is_active = ?", tenantID, true).
+		Find(&allSections).Error
+	if err != nil {
+		return nil, fmt.Errorf("get all sections: %w", err)
+	}
+
+	var markedSections []uuid.UUID
+	err = r.db.WithContext(ctx).
+		Model(&models.StudentAttendance{}).
+		Distinct("section_id").
+		Where("tenant_id = ? AND attendance_date = ? AND period_id IS NULL", tenantID, date.Format("2006-01-02")).
+		Pluck("section_id", &markedSections).Error
+	if err != nil {
+		return nil, fmt.Errorf("get marked sections: %w", err)
+	}
+
+	markedMap := make(map[uuid.UUID]bool)
+	for _, id := range markedSections {
+		markedMap[id] = true
+	}
+
+	var unmarked []uuid.UUID
+	for _, section := range allSections {
+		if !markedMap[section.ID] {
+			unmarked = append(unmarked, section.ID)
+		}
+	}
+
+	return unmarked, nil
+}
+
+// GetDailyAttendanceSummary retrieves overall attendance summary for a date.
+func (r *Repository) GetDailyAttendanceSummary(ctx context.Context, tenantID uuid.UUID, date time.Time) (present, absent, total int64, err error) {
+	var result struct {
+		Present int64
+		Absent  int64
+		Total   int64
+	}
+
+	err = r.db.WithContext(ctx).
+		Model(&models.StudentAttendance{}).
+		Select("COUNT(CASE WHEN status = 'present' THEN 1 END) as present, COUNT(CASE WHEN status = 'absent' THEN 1 END) as absent, COUNT(*) as total").
+		Where("tenant_id = ? AND attendance_date = ? AND period_id IS NULL", tenantID, date.Format("2006-01-02")).
+		Scan(&result).Error
+	if err != nil {
+		return 0, 0, 0, fmt.Errorf("get daily summary: %w", err)
+	}
+
+	return result.Present, result.Absent, result.Total, nil
+}
+
+// GetStudentByID retrieves a student by ID.
+func (r *Repository) GetStudentByID(ctx context.Context, tenantID, studentID uuid.UUID) (*models.Student, error) {
+	var student models.Student
+	err := r.db.WithContext(ctx).
+		Where("tenant_id = ? AND id = ?", tenantID, studentID).
+		First(&student).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrStudentNotFound
+		}
+		return nil, fmt.Errorf("get student: %w", err)
+	}
+	return &student, nil
+}
+
+// GetStudentCurrentSection retrieves a student's current section from student_sections.
+func (r *Repository) GetStudentCurrentSection(ctx context.Context, tenantID, studentID uuid.UUID) (*models.Section, error) {
+	var section models.Section
+	err := r.db.WithContext(ctx).
+		Preload("Class").
+		Joins("JOIN student_sections ON student_sections.section_id = sections.id").
+		Where("student_sections.student_id = ? AND sections.tenant_id = ?", studentID, tenantID).
+		First(&section).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("get student section: %w", err)
+	}
+	return &section, nil
+}
+
+// GetAllActiveSections retrieves all active sections.
+func (r *Repository) GetAllActiveSections(ctx context.Context, tenantID uuid.UUID) ([]models.Section, error) {
+	var sections []models.Section
+	err := r.db.WithContext(ctx).
+		Preload("Class").
+		Where("tenant_id = ? AND is_active = ?", tenantID, true).
+		Order("display_order").
+		Find(&sections).Error
+	if err != nil {
+		return nil, fmt.Errorf("get all sections: %w", err)
+	}
+	return sections, nil
+}

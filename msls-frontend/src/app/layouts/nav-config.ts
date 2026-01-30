@@ -98,6 +98,18 @@ export const NAV_ITEMS: NavItem[] = [
         route: '/student-attendance/mark',
         permissions: ['student_attendance:mark_class'],
       },
+      {
+        label: 'Period-wise',
+        icon: 'table-cells',
+        route: '/student-attendance/period',
+        permissions: ['student_attendance:mark_class'],
+      },
+      {
+        label: 'Daily Summary',
+        icon: 'chart-bar',
+        route: '/student-attendance/summary',
+        permissions: ['student_attendance:view_class'],
+      },
     ],
   },
   {

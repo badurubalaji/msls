@@ -30,9 +30,9 @@ import { Branch } from '../../../admin/branches/branch.model';
     <div class="page">
       <!-- Back Navigation -->
       <div class="breadcrumb">
-        <a routerLink="/dashboard">
+        <a routerLink="/payroll">
           <i class="fa-solid fa-arrow-left"></i>
-          Back to Dashboard
+          Back to Payroll
         </a>
       </div>
 
@@ -1168,7 +1168,7 @@ export class PayRunsComponent implements OnInit {
         this.loadPayRuns();
         this.creating.set(false);
         // Navigate to pay run detail
-        this.router.navigate(['/payroll', payRun.id]);
+        this.router.navigate(['/payroll/runs', payRun.id]);
       },
       error: err => {
         const message = err?.error?.message || 'Failed to create pay run';
@@ -1179,7 +1179,7 @@ export class PayRunsComponent implements OnInit {
   }
 
   viewPayRun(run: PayRun): void {
-    this.router.navigate(['/payroll', run.id]);
+    this.router.navigate(['/payroll/runs', run.id]);
   }
 
   calculatePayroll(run: PayRun): void {

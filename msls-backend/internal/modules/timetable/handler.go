@@ -106,6 +106,53 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 			periodSlotsManage.DELETE("/:id", h.DeletePeriodSlot)
 		}
 	}
+
+	// Timetable routes
+	timetables := rg.Group("/timetables")
+	{
+		// My timetable - available to all authenticated users
+		timetables.GET("/teacher/me", h.GetMySchedule)
+
+		// View operations
+		timetablesView := timetables.Group("")
+		timetablesView.Use(middleware.PermissionRequired("timetables:read"))
+		{
+			timetablesView.GET("", h.ListTimetables)
+			timetablesView.GET("/:id", h.GetTimetable)
+			timetablesView.GET("/:id/entries", h.GetTimetableEntries)
+			timetablesView.GET("/conflicts", h.CheckConflicts)
+			timetablesView.GET("/teacher/:staffId", h.GetTeacherSchedule)
+		}
+
+		// Manage operations
+		timetablesManage := timetables.Group("")
+		timetablesManage.Use(middleware.PermissionRequired("timetables:create"))
+		{
+			timetablesManage.POST("", h.CreateTimetable)
+		}
+
+		timetablesUpdate := timetables.Group("")
+		timetablesUpdate.Use(middleware.PermissionRequired("timetables:update"))
+		{
+			timetablesUpdate.PUT("/:id", h.UpdateTimetable)
+			timetablesUpdate.POST("/:id/entries", h.UpsertTimetableEntry)
+			timetablesUpdate.POST("/:id/entries/bulk", h.BulkUpsertTimetableEntries)
+			timetablesUpdate.DELETE("/:id/entries/:entryId", h.DeleteTimetableEntry)
+		}
+
+		timetablesPublish := timetables.Group("")
+		timetablesPublish.Use(middleware.PermissionRequired("timetables:publish"))
+		{
+			timetablesPublish.POST("/:id/publish", h.PublishTimetable)
+			timetablesPublish.POST("/:id/archive", h.ArchiveTimetable)
+		}
+
+		timetablesDelete := timetables.Group("")
+		timetablesDelete.Use(middleware.PermissionRequired("timetables:delete"))
+		{
+			timetablesDelete.DELETE("/:id", h.DeleteTimetable)
+		}
+	}
 }
 
 // ========================================
@@ -684,4 +731,529 @@ func (h *Handler) DeletePeriodSlot(c *gin.Context) {
 	}
 
 	c.Status(http.StatusNoContent)
+}
+
+// ========================================
+// Timetable Handlers
+// ========================================
+
+// ListTimetables returns all timetables for the tenant.
+func (h *Handler) ListTimetables(c *gin.Context) {
+	tenantID, ok := middleware.GetCurrentTenantID(c)
+	if !ok {
+		apperr.Abort(c, apperr.BadRequest("Tenant ID is required"))
+		return
+	}
+
+	filter := TimetableFilter{TenantID: tenantID}
+
+	if branchIDStr := c.Query("branch_id"); branchIDStr != "" {
+		branchID, err := uuid.Parse(branchIDStr)
+		if err == nil {
+			filter.BranchID = &branchID
+		}
+	}
+
+	if sectionIDStr := c.Query("section_id"); sectionIDStr != "" {
+		sectionID, err := uuid.Parse(sectionIDStr)
+		if err == nil {
+			filter.SectionID = &sectionID
+		}
+	}
+
+	if academicYearIDStr := c.Query("academic_year_id"); academicYearIDStr != "" {
+		academicYearID, err := uuid.Parse(academicYearIDStr)
+		if err == nil {
+			filter.AcademicYearID = &academicYearID
+		}
+	}
+
+	if status := c.Query("status"); status != "" {
+		filter.Status = &status
+	}
+
+	timetables, total, err := h.service.ListTimetables(c.Request.Context(), filter)
+	if err != nil {
+		apperr.Abort(c, apperr.InternalError("Failed to list timetables"))
+		return
+	}
+
+	resp := TimetableListResponse{
+		Timetables: make([]TimetableResponse, len(timetables)),
+		Total:      total,
+	}
+	for i, tt := range timetables {
+		resp.Timetables[i] = TimetableToResponse(&tt)
+	}
+
+	response.OK(c, resp)
+}
+
+// GetTimetable returns a single timetable by ID with entries.
+func (h *Handler) GetTimetable(c *gin.Context) {
+	tenantID, ok := middleware.GetCurrentTenantID(c)
+	if !ok {
+		apperr.Abort(c, apperr.BadRequest("Tenant ID is required"))
+		return
+	}
+
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		apperr.Abort(c, apperr.BadRequest("Invalid timetable ID"))
+		return
+	}
+
+	timetable, err := h.service.GetTimetableByID(c.Request.Context(), tenantID, id)
+	if err != nil {
+		if errors.Is(err, ErrTimetableNotFound) {
+			apperr.Abort(c, apperr.NotFound("Timetable not found"))
+			return
+		}
+		apperr.Abort(c, apperr.InternalError("Failed to get timetable"))
+		return
+	}
+
+	response.OK(c, TimetableToResponse(timetable))
+}
+
+// CreateTimetable creates a new timetable.
+func (h *Handler) CreateTimetable(c *gin.Context) {
+	tenantID, ok := middleware.GetCurrentTenantID(c)
+	if !ok {
+		apperr.Abort(c, apperr.BadRequest("Tenant ID is required"))
+		return
+	}
+
+	userID, _ := middleware.GetCurrentUserID(c)
+
+	var req CreateTimetableRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		apperr.Abort(c, apperr.BadRequest(err.Error()))
+		return
+	}
+
+	timetable, err := h.service.CreateTimetable(c.Request.Context(), tenantID, req, userID)
+	if err != nil {
+		apperr.Abort(c, apperr.InternalError("Failed to create timetable"))
+		return
+	}
+
+	response.Created(c, TimetableToResponse(timetable))
+}
+
+// UpdateTimetable updates an existing timetable.
+func (h *Handler) UpdateTimetable(c *gin.Context) {
+	tenantID, ok := middleware.GetCurrentTenantID(c)
+	if !ok {
+		apperr.Abort(c, apperr.BadRequest("Tenant ID is required"))
+		return
+	}
+
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		apperr.Abort(c, apperr.BadRequest("Invalid timetable ID"))
+		return
+	}
+
+	var req UpdateTimetableRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		apperr.Abort(c, apperr.BadRequest(err.Error()))
+		return
+	}
+
+	timetable, err := h.service.UpdateTimetable(c.Request.Context(), tenantID, id, req)
+	if err != nil {
+		if errors.Is(err, ErrTimetableNotFound) {
+			apperr.Abort(c, apperr.NotFound("Timetable not found"))
+			return
+		}
+		if errors.Is(err, ErrTimetableNotDraft) {
+			apperr.Abort(c, apperr.Conflict("Only draft timetables can be updated"))
+			return
+		}
+		apperr.Abort(c, apperr.InternalError("Failed to update timetable"))
+		return
+	}
+
+	response.OK(c, TimetableToResponse(timetable))
+}
+
+// PublishTimetable publishes a draft timetable.
+func (h *Handler) PublishTimetable(c *gin.Context) {
+	tenantID, ok := middleware.GetCurrentTenantID(c)
+	if !ok {
+		apperr.Abort(c, apperr.BadRequest("Tenant ID is required"))
+		return
+	}
+
+	userID, _ := middleware.GetCurrentUserID(c)
+
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		apperr.Abort(c, apperr.BadRequest("Invalid timetable ID"))
+		return
+	}
+
+	timetable, err := h.service.PublishTimetable(c.Request.Context(), tenantID, id, userID)
+	if err != nil {
+		if errors.Is(err, ErrTimetableNotFound) {
+			apperr.Abort(c, apperr.NotFound("Timetable not found"))
+			return
+		}
+		if errors.Is(err, ErrTimetableAlreadyPublished) {
+			apperr.Abort(c, apperr.Conflict("Timetable is already published"))
+			return
+		}
+		apperr.Abort(c, apperr.InternalError("Failed to publish timetable"))
+		return
+	}
+
+	response.OK(c, TimetableToResponse(timetable))
+}
+
+// ArchiveTimetable archives a published timetable.
+func (h *Handler) ArchiveTimetable(c *gin.Context) {
+	tenantID, ok := middleware.GetCurrentTenantID(c)
+	if !ok {
+		apperr.Abort(c, apperr.BadRequest("Tenant ID is required"))
+		return
+	}
+
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		apperr.Abort(c, apperr.BadRequest("Invalid timetable ID"))
+		return
+	}
+
+	timetable, err := h.service.ArchiveTimetable(c.Request.Context(), tenantID, id)
+	if err != nil {
+		if errors.Is(err, ErrTimetableNotFound) {
+			apperr.Abort(c, apperr.NotFound("Timetable not found"))
+			return
+		}
+		apperr.Abort(c, apperr.InternalError("Failed to archive timetable"))
+		return
+	}
+
+	response.OK(c, TimetableToResponse(timetable))
+}
+
+// DeleteTimetable deletes a draft timetable.
+func (h *Handler) DeleteTimetable(c *gin.Context) {
+	tenantID, ok := middleware.GetCurrentTenantID(c)
+	if !ok {
+		apperr.Abort(c, apperr.BadRequest("Tenant ID is required"))
+		return
+	}
+
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		apperr.Abort(c, apperr.BadRequest("Invalid timetable ID"))
+		return
+	}
+
+	if err := h.service.DeleteTimetable(c.Request.Context(), tenantID, id); err != nil {
+		if errors.Is(err, ErrTimetableNotFound) {
+			apperr.Abort(c, apperr.NotFound("Timetable not found"))
+			return
+		}
+		if errors.Is(err, ErrTimetableNotDraft) {
+			apperr.Abort(c, apperr.Conflict("Only draft timetables can be deleted"))
+			return
+		}
+		apperr.Abort(c, apperr.InternalError("Failed to delete timetable"))
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
+// ========================================
+// Timetable Entry Handlers
+// ========================================
+
+// GetTimetableEntries returns all entries for a timetable.
+func (h *Handler) GetTimetableEntries(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		apperr.Abort(c, apperr.BadRequest("Invalid timetable ID"))
+		return
+	}
+
+	entries, err := h.service.GetTimetableEntries(c.Request.Context(), id)
+	if err != nil {
+		apperr.Abort(c, apperr.InternalError("Failed to get timetable entries"))
+		return
+	}
+
+	resp := make([]TimetableEntryResponse, len(entries))
+	for i, e := range entries {
+		resp[i] = TimetableEntryToResponse(&e)
+	}
+
+	response.OK(c, resp)
+}
+
+// UpsertTimetableEntry creates or updates a timetable entry.
+func (h *Handler) UpsertTimetableEntry(c *gin.Context) {
+	tenantID, ok := middleware.GetCurrentTenantID(c)
+	if !ok {
+		apperr.Abort(c, apperr.BadRequest("Tenant ID is required"))
+		return
+	}
+
+	timetableID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		apperr.Abort(c, apperr.BadRequest("Invalid timetable ID"))
+		return
+	}
+
+	var req CreateTimetableEntryRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		apperr.Abort(c, apperr.BadRequest(err.Error()))
+		return
+	}
+
+	entry, err := h.service.UpsertTimetableEntry(c.Request.Context(), tenantID, timetableID, req)
+	if err != nil {
+		if errors.Is(err, ErrTimetableNotFound) {
+			apperr.Abort(c, apperr.NotFound("Timetable not found"))
+			return
+		}
+		if errors.Is(err, ErrTimetableNotDraft) {
+			apperr.Abort(c, apperr.Conflict("Only draft timetables can be modified"))
+			return
+		}
+		apperr.Abort(c, apperr.InternalError("Failed to save timetable entry"))
+		return
+	}
+
+	response.OK(c, TimetableEntryToResponse(entry))
+}
+
+// BulkUpsertTimetableEntries creates or updates multiple entries.
+func (h *Handler) BulkUpsertTimetableEntries(c *gin.Context) {
+	tenantID, ok := middleware.GetCurrentTenantID(c)
+	if !ok {
+		apperr.Abort(c, apperr.BadRequest("Tenant ID is required"))
+		return
+	}
+
+	timetableID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		apperr.Abort(c, apperr.BadRequest("Invalid timetable ID"))
+		return
+	}
+
+	var req BulkTimetableEntryRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		apperr.Abort(c, apperr.BadRequest(err.Error()))
+		return
+	}
+
+	if err := h.service.BulkUpsertTimetableEntries(c.Request.Context(), tenantID, timetableID, req); err != nil {
+		if errors.Is(err, ErrTimetableNotFound) {
+			apperr.Abort(c, apperr.NotFound("Timetable not found"))
+			return
+		}
+		if errors.Is(err, ErrTimetableNotDraft) {
+			apperr.Abort(c, apperr.Conflict("Only draft timetables can be modified"))
+			return
+		}
+		apperr.Abort(c, apperr.InternalError("Failed to save timetable entries"))
+		return
+	}
+
+	response.OK(c, gin.H{"message": "Entries saved successfully"})
+}
+
+// DeleteTimetableEntry deletes a timetable entry.
+func (h *Handler) DeleteTimetableEntry(c *gin.Context) {
+	tenantID, ok := middleware.GetCurrentTenantID(c)
+	if !ok {
+		apperr.Abort(c, apperr.BadRequest("Tenant ID is required"))
+		return
+	}
+
+	timetableID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		apperr.Abort(c, apperr.BadRequest("Invalid timetable ID"))
+		return
+	}
+
+	entryID, err := uuid.Parse(c.Param("entryId"))
+	if err != nil {
+		apperr.Abort(c, apperr.BadRequest("Invalid entry ID"))
+		return
+	}
+
+	if err := h.service.DeleteTimetableEntry(c.Request.Context(), tenantID, timetableID, entryID); err != nil {
+		if errors.Is(err, ErrTimetableNotFound) {
+			apperr.Abort(c, apperr.NotFound("Timetable not found"))
+			return
+		}
+		if errors.Is(err, ErrTimetableNotDraft) {
+			apperr.Abort(c, apperr.Conflict("Only draft timetables can be modified"))
+			return
+		}
+		apperr.Abort(c, apperr.InternalError("Failed to delete timetable entry"))
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
+// ========================================
+// Conflict Detection Handlers
+// ========================================
+
+// CheckConflicts checks for teacher conflicts.
+func (h *Handler) CheckConflicts(c *gin.Context) {
+	tenantID, ok := middleware.GetCurrentTenantID(c)
+	if !ok {
+		apperr.Abort(c, apperr.BadRequest("Tenant ID is required"))
+		return
+	}
+
+	staffIDStr := c.Query("staff_id")
+	if staffIDStr == "" {
+		apperr.Abort(c, apperr.BadRequest("Staff ID is required"))
+		return
+	}
+
+	staffID, err := uuid.Parse(staffIDStr)
+	if err != nil {
+		apperr.Abort(c, apperr.BadRequest("Invalid staff ID"))
+		return
+	}
+
+	dayOfWeek, err := strconv.Atoi(c.Query("day_of_week"))
+	if err != nil || dayOfWeek < 0 || dayOfWeek > 6 {
+		apperr.Abort(c, apperr.BadRequest("Invalid day of week"))
+		return
+	}
+
+	periodSlotIDStr := c.Query("period_slot_id")
+	if periodSlotIDStr == "" {
+		apperr.Abort(c, apperr.BadRequest("Period slot ID is required"))
+		return
+	}
+
+	periodSlotID, err := uuid.Parse(periodSlotIDStr)
+	if err != nil {
+		apperr.Abort(c, apperr.BadRequest("Invalid period slot ID"))
+		return
+	}
+
+	var excludeTimetableID *uuid.UUID
+	if excludeStr := c.Query("exclude_timetable_id"); excludeStr != "" {
+		id, err := uuid.Parse(excludeStr)
+		if err == nil {
+			excludeTimetableID = &id
+		}
+	}
+
+	conflicts, err := h.service.CheckTeacherConflicts(c.Request.Context(), tenantID, staffID, dayOfWeek, periodSlotID, excludeTimetableID)
+	if err != nil {
+		apperr.Abort(c, apperr.InternalError("Failed to check conflicts"))
+		return
+	}
+
+	response.OK(c, ConflictCheckResponse{
+		HasConflicts: len(conflicts) > 0,
+		Conflicts:    conflicts,
+	})
+}
+
+// GetTeacherSchedule returns a teacher's full schedule.
+func (h *Handler) GetTeacherSchedule(c *gin.Context) {
+	tenantID, ok := middleware.GetCurrentTenantID(c)
+	if !ok {
+		apperr.Abort(c, apperr.BadRequest("Tenant ID is required"))
+		return
+	}
+
+	staffID, err := uuid.Parse(c.Param("staffId"))
+	if err != nil {
+		apperr.Abort(c, apperr.BadRequest("Invalid staff ID"))
+		return
+	}
+
+	academicYearIDStr := c.Query("academic_year_id")
+	if academicYearIDStr == "" {
+		apperr.Abort(c, apperr.BadRequest("Academic year ID is required"))
+		return
+	}
+
+	academicYearID, err := uuid.Parse(academicYearIDStr)
+	if err != nil {
+		apperr.Abort(c, apperr.BadRequest("Invalid academic year ID"))
+		return
+	}
+
+	entries, err := h.service.GetTeacherSchedule(c.Request.Context(), tenantID, staffID, academicYearID)
+	if err != nil {
+		apperr.Abort(c, apperr.InternalError("Failed to get teacher schedule"))
+		return
+	}
+
+	resp := make([]TimetableEntryResponse, len(entries))
+	for i, e := range entries {
+		resp[i] = TimetableEntryToResponse(&e)
+	}
+
+	response.OK(c, TeacherScheduleResponse{
+		StaffID: staffID,
+		Entries: resp,
+	})
+}
+
+// GetMySchedule returns the current user's teaching schedule.
+func (h *Handler) GetMySchedule(c *gin.Context) {
+	tenantID, ok := middleware.GetCurrentTenantID(c)
+	if !ok {
+		apperr.Abort(c, apperr.BadRequest("Tenant ID is required"))
+		return
+	}
+
+	userID, ok := middleware.GetCurrentUserID(c)
+	if !ok {
+		apperr.Abort(c, apperr.Unauthorized("User not authenticated"))
+		return
+	}
+
+	// Get staff ID from user ID
+	staffID, err := h.service.GetStaffIDByUserID(c.Request.Context(), tenantID, userID)
+	if err != nil {
+		apperr.Abort(c, apperr.NotFound("Staff profile not found for this user"))
+		return
+	}
+
+	academicYearIDStr := c.Query("academic_year_id")
+	if academicYearIDStr == "" {
+		apperr.Abort(c, apperr.BadRequest("Academic year ID is required"))
+		return
+	}
+
+	academicYearID, err := uuid.Parse(academicYearIDStr)
+	if err != nil {
+		apperr.Abort(c, apperr.BadRequest("Invalid academic year ID"))
+		return
+	}
+
+	entries, err := h.service.GetTeacherSchedule(c.Request.Context(), tenantID, staffID, academicYearID)
+	if err != nil {
+		apperr.Abort(c, apperr.InternalError("Failed to get schedule"))
+		return
+	}
+
+	resp := make([]TimetableEntryResponse, len(entries))
+	for i, e := range entries {
+		resp[i] = TimetableEntryToResponse(&e)
+	}
+
+	response.OK(c, TeacherScheduleResponse{
+		StaffID: staffID,
+		Entries: resp,
+	})
 }

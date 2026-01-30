@@ -58,6 +58,41 @@ export const ACADEMICS_ROUTES: Routes = [
         loadComponent: () =>
           import('./timetable/period-slots/period-slots.component').then((m) => m.PeriodSlotsComponent),
       },
+      {
+        path: 'list',
+        loadComponent: () =>
+          import('./timetable/timetable-list/timetable-list.component').then((m) => m.TimetableListComponent),
+      },
+      {
+        path: 'builder/:id',
+        loadComponent: () =>
+          import('./timetable/timetable-builder/timetable-builder.component').then((m) => m.TimetableBuilderComponent),
+      },
+      {
+        path: 'my',
+        loadComponent: () =>
+          import('./timetable/teacher-timetable/teacher-timetable.component').then((m) => m.TeacherTimetableComponent),
+      },
+      {
+        path: 'substitutions',
+        children: [
+          {
+            path: '',
+            loadComponent: () =>
+              import('./timetable/substitution/substitution-list/substitution-list.component').then((m) => m.SubstitutionListComponent),
+          },
+          {
+            path: 'new',
+            loadComponent: () =>
+              import('./timetable/substitution/substitution-form/substitution-form.component').then((m) => m.SubstitutionFormComponent),
+          },
+          {
+            path: ':id',
+            loadComponent: () =>
+              import('./timetable/substitution/substitution-detail/substitution-detail.component').then((m) => m.SubstitutionDetailComponent),
+          },
+        ],
+      },
     ],
   },
 ];

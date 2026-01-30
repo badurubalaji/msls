@@ -173,6 +173,28 @@ export class ApiService {
   }
 
   /**
+   * Download a file and trigger browser download
+   * @param endpoint - API endpoint
+   * @param filename - Name for the downloaded file
+   * @param options - Request options
+   */
+  downloadFile(endpoint: string, filename: string, options?: RequestOptions): void {
+    this.getBlob(endpoint, options).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        link.click();
+        window.URL.revokeObjectURL(url);
+      },
+      error: (err) => {
+        console.error('Download failed:', err);
+      },
+    });
+  }
+
+  /**
    * Upload a file
    * @param endpoint - API endpoint
    * @param file - File to upload

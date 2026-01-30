@@ -11,8 +11,10 @@ import { permissionGuard } from '../../core/guards';
 export const ADMISSIONS_ROUTES: Routes = [
   {
     path: '',
-    redirectTo: 'sessions',
-    pathMatch: 'full',
+    loadComponent: () =>
+      import('./admissions.component').then((m) => m.AdmissionsComponent),
+    canActivate: [permissionGuard(['admissions:read'])],
+    title: 'Admissions | MSLS',
   },
   {
     path: 'sessions',

@@ -1356,6 +1356,27 @@ func setupRouter(cfg *config.Config, log *logger.Logger, db *gorm.DB) *gin.Engin
 					classAttendance.POST("/:id", studentAttendanceHandler.MarkClassAttendance)
 				}
 
+				// Period-wise attendance operations (Story 7.2)
+				periodAttendance := studentAttendanceRoutes.Group("")
+				periodAttendance.Use(middleware.PermissionRequired("student_attendance:mark_class"))
+				{
+					// Get periods for a section on a date
+					periodAttendance.GET("/periods", studentAttendanceHandler.GetPeriods)
+					// Get attendance for a specific period
+					periodAttendance.GET("/period/:id", studentAttendanceHandler.GetPeriodAttendance)
+					// Mark attendance for a specific period
+					periodAttendance.POST("/period/:id", studentAttendanceHandler.MarkPeriodAttendance)
+					// Get daily summary (all periods aggregated)
+					periodAttendance.GET("/daily-summary", studentAttendanceHandler.GetDailySummary)
+				}
+
+				// Subject-wise attendance analytics
+				subjectAttendance := studentAttendanceRoutes.Group("/subject")
+				subjectAttendance.Use(middleware.PermissionRequired("student_attendance:view_class"))
+				{
+					subjectAttendance.GET("/:id", studentAttendanceHandler.GetSubjectAttendance)
+				}
+
 				// View all student attendance (requires student_attendance:view_all permission)
 				viewAll := studentAttendanceRoutes.Group("")
 				viewAll.Use(middleware.PermissionRequired("student_attendance:view_all"))
@@ -1369,6 +1390,50 @@ func setupRouter(cfg *config.Config, log *logger.Logger, db *gorm.DB) *gin.Engin
 				{
 					studentAttendanceSettings.GET("", studentAttendanceHandler.GetSettings)
 					studentAttendanceSettings.PUT("", studentAttendanceHandler.UpdateSettings)
+				}
+
+				// Edit and audit trail routes (Story 7.3)
+				// Edit attendance - requires mark_class permission
+				editRoutes := studentAttendanceRoutes.Group("")
+				editRoutes.Use(middleware.PermissionRequired("student_attendance:mark_class"))
+				{
+					// Edit an attendance record (with reason)
+					editRoutes.PUT("/:id", studentAttendanceHandler.EditAttendance)
+					// Get edit window status
+					editRoutes.GET("/:id/edit-status", studentAttendanceHandler.GetEditWindowStatus)
+				}
+
+				// View audit history - requires view_class permission
+				historyRoutes := studentAttendanceRoutes.Group("")
+				historyRoutes.Use(middleware.PermissionRequired("student_attendance:view_class"))
+				{
+					// Get audit trail for an attendance record
+					historyRoutes.GET("/:id/history", studentAttendanceHandler.GetAttendanceHistory)
+				}
+
+				// Calendar and summary routes (Story 7.4) - for students/parents
+				calendarRoutes := studentAttendanceRoutes.Group("")
+				calendarRoutes.Use(middleware.PermissionRequired("student_attendance:view_self"))
+				{
+					calendarRoutes.GET("/calendar/:studentId", studentAttendanceHandler.GetStudentCalendar)
+					calendarRoutes.GET("/summary/:studentId", studentAttendanceHandler.GetStudentSummary)
+				}
+
+				// Reports routes (Stories 7.5, 7.6) - for teachers/admins
+				reportRoutes := studentAttendanceRoutes.Group("/reports")
+				reportRoutes.Use(middleware.PermissionRequired("student_attendance:view_reports"))
+				{
+					reportRoutes.GET("/class/:sectionId", studentAttendanceHandler.GetClassReport)
+					reportRoutes.GET("/class/:sectionId/monthly", studentAttendanceHandler.GetMonthlyClassReport)
+					reportRoutes.GET("/daily", studentAttendanceHandler.GetDailyReport)
+				}
+
+				// Alerts routes (Stories 7.7, 7.8) - for admins
+				alertRoutes := studentAttendanceRoutes.Group("/alerts")
+				alertRoutes.Use(middleware.PermissionRequired("student_attendance:view_alerts"))
+				{
+					alertRoutes.GET("/low-attendance", studentAttendanceHandler.GetLowAttendanceDashboard)
+					alertRoutes.GET("/unmarked", studentAttendanceHandler.GetUnmarkedAttendance)
 				}
 			}
 
