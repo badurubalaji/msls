@@ -58,3 +58,21 @@ VALUES
     (uuid_generate_v7(), 'exam:type:update', 'Update Exam Types', 'Permission to update exam type configurations', 'exam', NOW(), NOW()),
     (uuid_generate_v7(), 'exam:type:delete', 'Delete Exam Types', 'Permission to delete exam types', 'exam', NOW(), NOW())
 ON CONFLICT (code) DO NOTHING;
+
+-- Assign exam type permissions to admin roles (super_admin, admin, principal)
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT r.id, p.id
+FROM roles r
+CROSS JOIN permissions p
+WHERE r.name IN ('super_admin', 'admin', 'principal')
+AND p.code IN ('exam:type:view', 'exam:type:create', 'exam:type:update', 'exam:type:delete')
+ON CONFLICT DO NOTHING;
+
+-- Teachers can view exam types
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT r.id, p.id
+FROM roles r
+CROSS JOIN permissions p
+WHERE r.name = 'teacher'
+AND p.code = 'exam:type:view'
+ON CONFLICT DO NOTHING;
