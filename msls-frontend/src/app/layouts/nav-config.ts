@@ -195,7 +195,7 @@ export const NAV_ITEMS: NavItem[] = [
   },
   {
     label: 'Exams',
-    icon: 'document-check',
+    icon: 'file-signature',
     permissions: ['exam:type:view'],
     children: [
       {

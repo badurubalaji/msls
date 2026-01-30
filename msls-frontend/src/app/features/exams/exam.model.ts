@@ -9,8 +9,8 @@
 export type EvaluationType = 'marks' | 'grade';
 
 export const EVALUATION_TYPES: { value: EvaluationType; label: string; icon: string; color: string }[] = [
-  { value: 'marks', label: 'Marks Based', icon: 'fa-hashtag', color: 'bg-blue-100 text-blue-700' },
-  { value: 'grade', label: 'Grade Based', icon: 'fa-star', color: 'bg-amber-100 text-amber-700' },
+  { value: 'marks', label: 'Marks Based', icon: 'fa-solid fa-calculator', color: 'bg-blue-100 text-blue-700' },
+  { value: 'grade', label: 'Grade Based', icon: 'fa-solid fa-star', color: 'bg-amber-100 text-amber-700' },
 ];
 
 // ========================================
