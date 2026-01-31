@@ -1,0 +1,363 @@
+<div class="page">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-content">
+      <button class="back-btn" (click)="goBack()">
+        <i class="fa-solid fa-arrow-left"></i>
+      </button>
+      <div class="header-icon">
+        <i class="fa-solid fa-calendar-days"></i>
+      </div>
+      <div class="header-text">
+        <h1>Exam Schedules</h1>
+        <p>{{ examName() }}</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      @if (canEdit()) {
+        <button class="btn btn-primary" (click)="openAddModal()">
+          <i class="fa-solid fa-plus"></i>
+          <span class="btn-text">Add Schedule</span>
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Exam Info Card -->
+  @if (examination(); as exam) {
+    <div class="info-card">
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="info-label">Exam Type</span>
+          <span class="info-value">{{ exam.examTypeName }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Period</span>
+          <span class="info-value">{{ formatDate(exam.startDate) }} - {{ formatDate(exam.endDate) }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Classes</span>
+          <div class="class-badges">
+            @for (cls of exam.classes; track cls.id) {
+              <span class="class-badge">{{ cls.name }}</span>
+            }
+          </div>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Status</span>
+          <span class="status-badge" [class]="getStatusClass(exam.status)">
+            {{ getStatusLabel(exam.status) }}
+          </span>
+        </div>
+      </div>
+      @if (!isDraft()) {
+        <div class="info-notice">
+          <i class="fa-solid fa-circle-info"></i>
+          <span>This examination is published. Unpublish to modify schedules.</span>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Content -->
+  <div class="content-card">
+    @if (loading()) {
+      <div class="loading-container">
+        <div class="spinner"></div>
+        <span>Loading schedules...</span>
+      </div>
+    } @else if (error()) {
+      <div class="error-container">
+        <i class="fa-solid fa-circle-exclamation"></i>
+        <span>{{ error() }}</span>
+        <button class="btn btn-secondary btn-sm" (click)="goBack()">
+          Go Back
+        </button>
+      </div>
+    } @else {
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Subject</th>
+              <th>Date</th>
+              <th>Time</th>
+              <th class="hide-mobile">Max Marks</th>
+              <th class="hide-mobile">Passing</th>
+              <th class="hide-tablet">Venue</th>
+              @if (canEdit()) {
+                <th style="width: 100px; text-align: right;">Actions</th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (schedule of sortedSchedules(); track schedule.id) {
+              <tr>
+                <td class="subject-cell">
+                  <div class="subject-info">
+                    <span class="subject-name">{{ schedule.subjectName }}</span>
+                    <span class="subject-code">{{ schedule.subjectCode }}</span>
+                  </div>
+                </td>
+                <td class="date-cell">
+                  <span class="date">{{ formatDate(schedule.examDate) }}</span>
+                </td>
+                <td class="time-cell">
+                  <span class="time-range">
+                    {{ formatTime(schedule.startTime) }} - {{ formatTime(schedule.endTime) }}
+                  </span>
+                </td>
+                <td class="hide-mobile">
+                  <span class="marks">{{ schedule.maxMarks }}</span>
+                </td>
+                <td class="hide-mobile">
+                  <span class="marks">{{ schedule.passingMarks ?? '-' }}</span>
+                </td>
+                <td class="hide-tablet">
+                  <span class="venue">{{ schedule.venue || '-' }}</span>
+                </td>
+                @if (canEdit()) {
+                  <td class="actions-cell">
+                    <button
+                      class="action-btn"
+                      title="Edit"
+                      (click)="editSchedule(schedule)"
+                    >
+                      <i class="fa-regular fa-pen-to-square"></i>
+                    </button>
+                    <button
+                      class="action-btn action-btn--danger"
+                      title="Delete"
+                      (click)="confirmDelete(schedule)"
+                    >
+                      <i class="fa-regular fa-trash-can"></i>
+                    </button>
+                  </td>
+                }
+              </tr>
+            } @empty {
+              <tr>
+                <td [attr.colspan]="canEdit() ? 7 : 6" class="empty-cell">
+                  <div class="empty-state">
+                    <i class="fa-regular fa-calendar-xmark"></i>
+                    <p>No schedules added yet</p>
+                    @if (canEdit()) {
+                      <button class="btn btn-primary btn-sm" (click)="openAddModal()">
+                        <i class="fa-solid fa-plus"></i>
+                        Add First Schedule
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+
+  <!-- Add/Edit Schedule Modal -->
+  @if (showFormModal()) {
+    <div class="modal-overlay" (click)="closeFormModal()">
+      <div class="modal modal--md" (click)="$event.stopPropagation()">
+        <div class="modal__header">
+          <h3>
+            <i class="fa-solid fa-calendar-plus"></i>
+            {{ modalTitle() }}
+          </h3>
+          <button type="button" class="modal__close" (click)="closeFormModal()">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div class="modal__body">
+          <form class="form">
+            <div class="form-group">
+              <label for="subjectId">Subject <span class="required">*</span></label>
+              <select
+                id="subjectId"
+                [(ngModel)]="formData.subjectId"
+                name="subjectId"
+                class="form-select"
+                required
+              >
+                <option value="">Select Subject</option>
+                @for (subject of availableSubjects(); track subject.id) {
+                  <option [value]="subject.id">{{ subject.name }} ({{ subject.code }})</option>
+                }
+              </select>
+              @if (availableSubjects().length === 0) {
+                <p class="form-hint warning">All subjects have been scheduled</p>
+              }
+            </div>
+
+            <div class="form-group">
+              <label for="examDate">Exam Date <span class="required">*</span></label>
+              <input
+                type="date"
+                id="examDate"
+                [(ngModel)]="formData.examDate"
+                name="examDate"
+                class="form-input"
+                [min]="examination()?.startDate"
+                [max]="examination()?.endDate"
+                required
+              />
+              @if (!isDateValid()) {
+                <p class="form-hint warning">Date must be within examination period</p>
+              }
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="startTime">Start Time <span class="required">*</span></label>
+                <input
+                  type="time"
+                  id="startTime"
+                  [(ngModel)]="formData.startTime"
+                  name="startTime"
+                  class="form-input"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="endTime">End Time <span class="required">*</span></label>
+                <input
+                  type="time"
+                  id="endTime"
+                  [(ngModel)]="formData.endTime"
+                  name="endTime"
+                  class="form-input"
+                  required
+                />
+              </div>
+            </div>
+            @if (formData.startTime && formData.endTime && formData.endTime <= formData.startTime) {
+              <p class="form-hint warning">End time must be after start time</p>
+            }
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="maxMarks">Max Marks <span class="required">*</span></label>
+                <input
+                  type="number"
+                  id="maxMarks"
+                  [(ngModel)]="formData.maxMarks"
+                  name="maxMarks"
+                  class="form-input"
+                  min="1"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="passingMarks">Passing Marks</label>
+                <input
+                  type="number"
+                  id="passingMarks"
+                  [(ngModel)]="formData.passingMarks"
+                  name="passingMarks"
+                  class="form-input"
+                  min="0"
+                  [max]="formData.maxMarks"
+                />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="venue">Venue / Room</label>
+              <input
+                type="text"
+                id="venue"
+                [(ngModel)]="formData.venue"
+                name="venue"
+                class="form-input"
+                placeholder="e.g., Room 101, Hall A"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="notes">Notes</label>
+              <textarea
+                id="notes"
+                [(ngModel)]="formData.notes"
+                name="notes"
+                class="form-textarea"
+                rows="2"
+                placeholder="Any special instructions..."
+              ></textarea>
+            </div>
+          </form>
+        </div>
+        <div class="modal__footer">
+          <button type="button" class="btn btn--secondary" (click)="closeFormModal()">
+            Cancel
+          </button>
+          <button
+            type="button"
+            class="btn btn--primary"
+            [disabled]="saving() || !isFormValid() || !isDateValid()"
+            (click)="saveSchedule()"
+          >
+            @if (saving()) {
+              <div class="btn-spinner"></div>
+              {{ editingSchedule() ? 'Saving...' : 'Adding...' }}
+            } @else {
+              <i class="fa-solid" [class.fa-check]="editingSchedule()" [class.fa-plus]="!editingSchedule()"></i>
+              {{ editingSchedule() ? 'Save Changes' : 'Add Schedule' }}
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Delete Confirmation Modal -->
+  @if (showDeleteModal()) {
+    <div class="modal-overlay" (click)="closeDeleteModal()">
+      <div class="modal modal--sm" (click)="$event.stopPropagation()">
+        <div class="modal__header">
+          <h3>
+            <i class="fa-solid fa-trash"></i>
+            Delete Schedule
+          </h3>
+          <button type="button" class="modal__close" (click)="closeDeleteModal()">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div class="modal__body">
+          <div class="delete-confirmation">
+            <div class="delete-icon">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <p>
+              Are you sure you want to delete the schedule for
+              <strong>"{{ scheduleToDelete()?.subjectName }}"</strong>?
+            </p>
+            <p class="delete-warning">
+              This action cannot be undone.
+            </p>
+          </div>
+        </div>
+        <div class="modal__footer">
+          <button type="button" class="btn btn--secondary" (click)="closeDeleteModal()">
+            Cancel
+          </button>
+          <button
+            type="button"
+            class="btn btn--danger"
+            [disabled]="deleting()"
+            (click)="deleteSchedule()"
+          >
+            @if (deleting()) {
+              <div class="btn-spinner"></div>
+              Deleting...
+            } @else {
+              <i class="fa-solid fa-trash"></i>
+              Delete
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

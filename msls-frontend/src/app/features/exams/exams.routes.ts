@@ -16,6 +16,12 @@ export const EXAMS_ROUTES: Routes = [
         title: 'Examinations',
       },
       {
+        path: ':id/schedules',
+        loadComponent: () =>
+          import('./examination-schedule/examination-schedule').then(m => m.ExaminationSchedule),
+        title: 'Exam Schedules',
+      },
+      {
         path: 'types',
         loadComponent: () =>
           import('./exam-type-list/exam-type-list.component').then(m => m.ExamTypeListComponent),

@@ -267,3 +267,38 @@ So that **attendance requirements are enforced**.
 **Then** report shows: eligible vs ineligible count
 **And** class-wise breakdown is available
 **And** report can be shared with parents
+
+---
+
+### Story 8.10: Replace SQLite Test Database with PostgreSQL
+
+As a **developer**,
+I want **unit tests to use PostgreSQL instead of SQLite**,
+So that **tests accurately reflect production behavior**.
+
+**Acceptance Criteria:**
+
+**Given** tests use in-memory SQLite currently
+**When** running unit tests
+**Then** PostgreSQL-specific syntax fails (e.g., `NULLS LAST`, RLS)
+**And** test results don't reflect production behavior
+
+**Given** testcontainers-go is configured
+**When** running unit tests
+**Then** a real PostgreSQL container is spun up
+**And** tests use actual PostgreSQL syntax
+**And** RLS policies can be tested
+**And** UUID generation works correctly
+
+**Given** test infrastructure is updated
+**When** running `go test ./...`
+**Then** all existing tests pass with PostgreSQL
+**And** CI/CD pipeline uses the same approach
+**And** tests are isolated per test run
+
+**Technical Notes:**
+- Remove `gorm.io/driver/sqlite` dependency
+- Add `github.com/testcontainers/testcontainers-go`
+- Create shared test helper for PostgreSQL container setup
+- Update all `*_test.go` files using SQLite
+- Ensure parallel test execution works correctly

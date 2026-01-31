@@ -130,13 +130,15 @@ development_status:
   # Epic 8: Examinations & Grading
   epic-8: in-progress
   8-1-exam-type-configuration: done
-  8-2-examination-scheduling: in-progress
+  8-2-examination-scheduling: review
   8-3-hall-ticket-generation: backlog
   8-4-marks-entry: backlog
   8-5-grading-scale-configuration: backlog
   8-6-result-calculation: backlog
   8-7-report-card-generation: backlog
   8-8-rank-generation: backlog
+  8-9-exam-eligibility-attendance: backlog
+  8-10-replace-sqlite-tests: backlog
   epic-8-retrospective: optional
 
   # Epic 9: Homework & Assignments
