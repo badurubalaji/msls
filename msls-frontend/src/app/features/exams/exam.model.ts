@@ -207,3 +207,106 @@ export const EXAM_TYPE_PRESETS: Partial<CreateExamTypeRequest>[] = [
   { name: 'Practical', code: 'PR', weightage: 20, evaluationType: 'marks', defaultMaxMarks: 30 },
   { name: 'Internal Assessment', code: 'IA', weightage: 10, evaluationType: 'grade', defaultMaxMarks: 10 },
 ];
+
+// ========================================
+// Hall Ticket Models
+// ========================================
+
+export type HallTicketStatus = 'generated' | 'printed' | 'downloaded';
+
+export const HALL_TICKET_STATUSES: { value: HallTicketStatus; label: string; color: string; icon: string }[] = [
+  { value: 'generated', label: 'Generated', color: 'bg-blue-100 text-blue-700', icon: 'fa-solid fa-file-circle-check' },
+  { value: 'printed', label: 'Printed', color: 'bg-amber-100 text-amber-700', icon: 'fa-solid fa-print' },
+  { value: 'downloaded', label: 'Downloaded', color: 'bg-green-100 text-green-700', icon: 'fa-solid fa-download' },
+];
+
+export interface HallTicket {
+  id: string;
+  examinationId: string;
+  studentId: string;
+  rollNumber: string;
+  qrCodeData: string;
+  status: HallTicketStatus;
+  generatedAt: string;
+  printedAt?: string;
+  downloadedAt?: string;
+  // Joined fields
+  studentName?: string;
+  admissionNumber?: string;
+  className?: string;
+  sectionName?: string;
+  examinationName?: string;
+}
+
+export interface HallTicketTemplate {
+  id: string;
+  name: string;
+  headerLogoUrl?: string;
+  schoolName?: string;
+  schoolAddress?: string;
+  instructions?: string;
+  isDefault: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface HallTicketListResponse {
+  data: HallTicket[];
+  meta: {
+    total: number;
+    limit: number;
+    offset: number;
+  };
+}
+
+export interface HallTicketFilter {
+  classId?: string;
+  sectionId?: string;
+  status?: HallTicketStatus;
+  search?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export interface GenerateHallTicketsRequest {
+  classId?: string;
+  sectionId?: string;
+  rollNumberPrefix?: string;
+}
+
+export interface GenerateHallTicketsResponse {
+  totalStudents: number;
+  generated: number;
+  skipped: number;
+  failed: number;
+  errors?: string[];
+}
+
+export interface CreateHallTicketTemplateRequest {
+  name: string;
+  headerLogoUrl?: string;
+  schoolName?: string;
+  schoolAddress?: string;
+  instructions?: string;
+  isDefault?: boolean;
+}
+
+export interface UpdateHallTicketTemplateRequest {
+  name?: string;
+  headerLogoUrl?: string;
+  schoolName?: string;
+  schoolAddress?: string;
+  instructions?: string;
+  isDefault?: boolean;
+}
+
+export interface VerifyHallTicketResponse {
+  valid: boolean;
+  hallTicketId?: string;
+  studentName?: string;
+  admissionNumber?: string;
+  rollNumber?: string;
+  examinationName?: string;
+  className?: string;
+  message: string;
+}

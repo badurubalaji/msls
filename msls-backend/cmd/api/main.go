@@ -45,6 +45,7 @@ import (
 	"msls-backend/internal/modules/enrollment"
 	"msls-backend/internal/modules/exam"
 	"msls-backend/internal/modules/examination"
+	"msls-backend/internal/modules/hallticket"
 	"msls-backend/internal/modules/academic"
 	"msls-backend/internal/modules/timetable"
 	"msls-backend/internal/modules/guardian"
@@ -350,6 +351,9 @@ func setupRouter(cfg *config.Config, log *logger.Logger, db *gorm.DB) *gin.Engin
 	examinationRepo := examination.NewRepository(db)
 	examinationService := examination.NewService(examinationRepo)
 
+	// Initialize hall ticket service
+	hallTicketService := hallticket.NewService(db, cfg.JWT.Secret)
+
 	// Initialize file storage for staff documents
 	fileStorage, err := storage.NewLocalStorage("./uploads", "/uploads")
 	if err != nil {
@@ -398,6 +402,7 @@ func setupRouter(cfg *config.Config, log *logger.Logger, db *gorm.DB) *gin.Engin
 	timetableHandler := timetable.NewHandler(timetableService)
 	examHandler := exam.NewHandler(examService)
 	examinationHandler := examination.NewHandler(examinationService)
+	hallTicketHandler := hallticket.NewHandler(hallTicketService)
 	staffDocumentHandler := staffdocument.NewHandler(staffDocumentService, fileStorage)
 
 	// Initialize attendance service (wrapping staff service for lookup)
@@ -1471,6 +1476,9 @@ func setupRouter(cfg *config.Config, log *logger.Logger, db *gorm.DB) *gin.Engin
 
 			// Examination management routes
 			examinationHandler.RegisterRoutes(protected)
+
+			// Hall ticket management routes
+			hallTicketHandler.RegisterRoutes(protected, middleware.AuthRequired(jwtService))
 
 			// Teacher assignment routes
 			assignmentHandler.RegisterRoutes(protected)

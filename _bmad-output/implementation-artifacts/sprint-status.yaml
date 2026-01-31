@@ -131,7 +131,7 @@ development_status:
   epic-8: in-progress
   8-1-exam-type-configuration: done
   8-2-examination-scheduling: review
-  8-3-hall-ticket-generation: backlog
+  8-3-hall-ticket-generation: review
   8-4-marks-entry: backlog
   8-5-grading-scale-configuration: backlog
   8-6-result-calculation: backlog

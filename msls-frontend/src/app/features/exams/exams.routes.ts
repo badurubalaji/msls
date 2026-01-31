@@ -22,10 +22,22 @@ export const EXAMS_ROUTES: Routes = [
         title: 'Exam Schedules',
       },
       {
+        path: ':id/hall-tickets',
+        loadComponent: () =>
+          import('./hall-ticket-list/hall-ticket-list.component').then(m => m.HallTicketListComponent),
+        title: 'Hall Tickets',
+      },
+      {
         path: 'types',
         loadComponent: () =>
           import('./exam-type-list/exam-type-list.component').then(m => m.ExamTypeListComponent),
         title: 'Exam Types',
+      },
+      {
+        path: 'hall-ticket-templates',
+        loadComponent: () =>
+          import('./hall-ticket-template/hall-ticket-template.component').then(m => m.HallTicketTemplateComponent),
+        title: 'Hall Ticket Templates',
       },
     ],
   },

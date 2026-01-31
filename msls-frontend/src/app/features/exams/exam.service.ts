@@ -24,6 +24,15 @@ import {
   ExamSchedule,
   CreateScheduleRequest,
   UpdateScheduleRequest,
+  HallTicket,
+  HallTicketListResponse,
+  HallTicketFilter,
+  HallTicketTemplate,
+  GenerateHallTicketsRequest,
+  GenerateHallTicketsResponse,
+  CreateHallTicketTemplateRequest,
+  UpdateHallTicketTemplateRequest,
+  VerifyHallTicketResponse,
 } from './exam.model';
 
 /**
@@ -223,8 +232,135 @@ export class ExamService {
   }
 
   // ========================================
+  // Hall Ticket Methods
+  // ========================================
+
+  /**
+   * Get hall tickets for an examination.
+   */
+  getHallTickets(examinationId: string, filter?: HallTicketFilter): Observable<HallTicketListResponse> {
+    const params = this.buildHallTicketFilterParams(filter);
+    return this.apiService.get<HallTicketListResponse>(`/examinations/${examinationId}/hall-tickets`, { params });
+  }
+
+  /**
+   * Get a single hall ticket by ID.
+   */
+  getHallTicket(examinationId: string, ticketId: string): Observable<HallTicket> {
+    return this.apiService.get<{ data: HallTicket }>(`/examinations/${examinationId}/hall-tickets/${ticketId}`).pipe(
+      map(response => response.data)
+    );
+  }
+
+  /**
+   * Generate hall tickets for an examination.
+   */
+  generateHallTickets(examinationId: string, request?: GenerateHallTicketsRequest): Observable<GenerateHallTicketsResponse> {
+    const payload: Record<string, unknown> = {};
+    if (request?.classId) payload['classId'] = request.classId;
+    if (request?.sectionId) payload['sectionId'] = request.sectionId;
+    if (request?.rollNumberPrefix) payload['rollNumberPrefix'] = request.rollNumberPrefix;
+    return this.apiService.post<{ data: GenerateHallTicketsResponse }>(`/examinations/${examinationId}/hall-tickets/generate`, payload).pipe(
+      map(response => response.data)
+    );
+  }
+
+  /**
+   * Delete a hall ticket.
+   */
+  deleteHallTicket(examinationId: string, ticketId: string): Observable<void> {
+    return this.apiService.delete<void>(`/examinations/${examinationId}/hall-tickets/${ticketId}`);
+  }
+
+  /**
+   * Download a single hall ticket PDF.
+   */
+  downloadHallTicketPdf(examinationId: string, ticketId: string): Observable<Blob> {
+    return this.apiService.getBlob(`/examinations/${examinationId}/hall-tickets/${ticketId}/pdf`);
+  }
+
+  /**
+   * Download batch hall tickets PDF.
+   */
+  downloadBatchHallTicketsPdf(examinationId: string, classId?: string): Observable<Blob> {
+    const params: Record<string, string> = {};
+    if (classId) params['classId'] = classId;
+    return this.apiService.getBlob(`/examinations/${examinationId}/hall-tickets/pdf`, { params });
+  }
+
+  /**
+   * Verify a hall ticket by QR code.
+   */
+  verifyHallTicket(qrCode: string): Observable<VerifyHallTicketResponse> {
+    return this.apiService.get<{ data: VerifyHallTicketResponse }>(`/hall-tickets/verify/${encodeURIComponent(qrCode)}`).pipe(
+      map(response => response.data)
+    );
+  }
+
+  // ========================================
+  // Hall Ticket Template Methods
+  // ========================================
+
+  /**
+   * Get all hall ticket templates.
+   */
+  getHallTicketTemplates(): Observable<HallTicketTemplate[]> {
+    return this.apiService.get<{ data: HallTicketTemplate[] }>('/hall-ticket-templates').pipe(
+      map(response => response.data || [])
+    );
+  }
+
+  /**
+   * Get a single hall ticket template by ID.
+   */
+  getHallTicketTemplate(id: string): Observable<HallTicketTemplate> {
+    return this.apiService.get<{ data: HallTicketTemplate }>(`/hall-ticket-templates/${id}`).pipe(
+      map(response => response.data)
+    );
+  }
+
+  /**
+   * Create a new hall ticket template.
+   */
+  createHallTicketTemplate(data: CreateHallTicketTemplateRequest): Observable<HallTicketTemplate> {
+    return this.apiService.post<{ data: HallTicketTemplate }>('/hall-ticket-templates', data).pipe(
+      map(response => response.data)
+    );
+  }
+
+  /**
+   * Update a hall ticket template.
+   */
+  updateHallTicketTemplate(id: string, data: UpdateHallTicketTemplateRequest): Observable<HallTicketTemplate> {
+    return this.apiService.put<{ data: HallTicketTemplate }>(`/hall-ticket-templates/${id}`, data).pipe(
+      map(response => response.data)
+    );
+  }
+
+  /**
+   * Delete a hall ticket template.
+   */
+  deleteHallTicketTemplate(id: string): Observable<void> {
+    return this.apiService.delete<void>(`/hall-ticket-templates/${id}`);
+  }
+
+  // ========================================
   // Private Helper Methods
   // ========================================
+
+  private buildHallTicketFilterParams(filter?: HallTicketFilter): Record<string, string> {
+    const params: Record<string, string> = {};
+    if (!filter) return params;
+
+    if (filter.classId) params['classId'] = filter.classId;
+    if (filter.sectionId) params['sectionId'] = filter.sectionId;
+    if (filter.status) params['status'] = filter.status;
+    if (filter.search) params['search'] = filter.search;
+    if (filter.limit) params['limit'] = String(filter.limit);
+    if (filter.offset) params['offset'] = String(filter.offset);
+
+    return params;
+  }
 
   private buildExaminationFilterParams(filter?: ExaminationFilter): Record<string, string> {
     const params: Record<string, string> = {};

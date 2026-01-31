@@ -275,6 +275,15 @@ interface ClassOption {
                       >
                         <i class="fa-solid fa-calendar-days"></i>
                       </button>
+                      @if (exam.status === 'scheduled' || exam.status === 'ongoing') {
+                        <button
+                          class="action-btn"
+                          title="Hall Tickets"
+                          [routerLink]="['/exams', exam.id, 'hall-tickets']"
+                        >
+                          <i class="fa-solid fa-ticket"></i>
+                        </button>
+                      }
                       <button
                         class="action-btn"
                         title="Edit"
