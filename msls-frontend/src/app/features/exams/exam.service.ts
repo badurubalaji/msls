@@ -51,8 +51,8 @@ export class ExamService {
    */
   getExamTypes(filter?: ExamTypeFilter): Observable<ExamType[]> {
     const params = this.buildExamTypeFilterParams(filter);
-    return this.apiService.get<ExamTypeListResponse>('/exam-types', { params }).pipe(
-      map(response => response.items || [])
+    return this.apiService.get<{ items: Record<string, unknown>[]; total: number }>('/exam-types', { params }).pipe(
+      map(response => (response.items || []).map(item => this.transformExamTypeFromApi(item)))
     );
   }
 
@@ -61,14 +61,21 @@ export class ExamService {
    */
   getExamTypesWithTotal(filter?: ExamTypeFilter): Observable<ExamTypeListResponse> {
     const params = this.buildExamTypeFilterParams(filter);
-    return this.apiService.get<ExamTypeListResponse>('/exam-types', { params });
+    return this.apiService.get<{ items: Record<string, unknown>[]; total: number }>('/exam-types', { params }).pipe(
+      map(response => ({
+        items: (response.items || []).map(item => this.transformExamTypeFromApi(item)),
+        total: response.total,
+      }))
+    );
   }
 
   /**
    * Get a single exam type by ID.
    */
   getExamType(id: string): Observable<ExamType> {
-    return this.apiService.get<ExamType>(`/exam-types/${id}`);
+    return this.apiService.get<Record<string, unknown>>(`/exam-types/${id}`).pipe(
+      map(item => this.transformExamTypeFromApi(item))
+    );
   }
 
   /**
@@ -397,5 +404,29 @@ export class ExamService {
     if ('defaultPassingMarks' in data) result['default_passing_marks'] = data.defaultPassingMarks;
 
     return result;
+  }
+
+  /**
+   * Transform API response (snake_case) to frontend model (camelCase).
+   */
+  private transformExamTypeFromApi(item: Record<string, unknown>): ExamType {
+    return {
+      id: item['id'] as string,
+      name: item['name'] as string,
+      code: item['code'] as string,
+      description: item['description'] as string | undefined,
+      weightage: Number(item['weightage']) || 0,
+      evaluationType: (item['evaluation_type'] || item['evaluationType']) as 'marks' | 'grade',
+      defaultMaxMarks: Number(item['default_max_marks'] || item['defaultMaxMarks']) || 0,
+      defaultPassingMarks: item['default_passing_marks'] !== undefined
+        ? Number(item['default_passing_marks'])
+        : item['defaultPassingMarks'] !== undefined
+          ? Number(item['defaultPassingMarks'])
+          : undefined,
+      displayOrder: Number(item['display_order'] || item['displayOrder']) || 0,
+      isActive: Boolean(item['is_active'] ?? item['isActive'] ?? true),
+      createdAt: (item['created_at'] || item['createdAt']) as string,
+      updatedAt: (item['updated_at'] || item['updatedAt']) as string,
+    };
   }
 }
