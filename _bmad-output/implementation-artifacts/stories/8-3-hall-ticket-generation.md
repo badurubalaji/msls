@@ -260,6 +260,112 @@ github.com/skip2/go-qrcode (new - for QR code generation)
 - [Source: payroll/pdf.go] - PDF generation pattern to follow
 - [Source: project-context.md] - API design and naming conventions
 
+## How It Works (Manual Testing)
+
+### Prerequisites
+1. Backend running: `cd msls-backend && go run cmd/api/main.go`
+2. Frontend running: `cd msls-frontend && npm start`
+3. Login as admin at http://localhost:4200
+4. An examination in "scheduled" status (see Story 8.2)
+5. Students enrolled in the exam's classes
+
+### Seed Data
+Run seed data to create test examination with schedules:
+```bash
+cd msls-backend
+PGPASSWORD=postgres psql -h localhost -U postgres -d msls -f scripts/seed_exam_data.sql
+```
+This creates:
+- Hall ticket template: "Default Template"
+- Examination: "Mid Term Examination - LKG" (scheduled status)
+- 3 exam schedules: English, Hindi, Mathematics
+
+### Test Scenarios
+
+#### 1. Manage Hall Ticket Templates
+- Navigate to **Exams → Hall Ticket Templates** in sidebar
+- See list of templates
+- Click **+ Add Template** to create new
+  - Enter: Name, School Name, Address, Instructions
+  - Set as default template
+- Edit or delete existing templates
+
+#### 2. Generate Hall Tickets
+- Navigate to **Exams → Examinations**
+- Find a "Scheduled" or "Ongoing" exam
+- Click **Hall Tickets** button on the exam row
+- Click **Generate Hall Tickets** button
+- Select class filter (optional)
+- Click **Generate**
+- See progress and results (success/failed count)
+
+#### 3. View Hall Tickets
+- Hall ticket list shows:
+  - Student name
+  - Roll number (auto-generated: YYYY-CLASS-SEQ)
+  - Class and section
+  - Status (Generated/Downloaded)
+- Filter by class or status
+
+#### 4. Download Hall Tickets
+- **Individual**: Click download icon on a row → PDF downloaded
+- **Bulk**: Click **Download All** button → Combined PDF
+
+#### 5. Verify Hall Ticket (Public)
+- Each hall ticket has a QR code
+- Scan QR code or visit `/api/v1/hall-tickets/verify/{qr_code}`
+- Returns verification status (valid/invalid)
+
+### PDF Contents
+The generated hall ticket PDF includes:
+- School name and logo
+- Student photo (if available)
+- Student details: Name, Roll Number, Class
+- Examination name and dates
+- Subject-wise schedule (date, time, venue)
+- Instructions from template
+- QR code for verification
+- Footer with generation date
+
+### API Testing (curl)
+```bash
+# List hall tickets for exam
+curl -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8080/api/v1/examinations/{exam_id}/hall-tickets
+
+# Generate hall tickets
+curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"class_id":"..."}' \
+  http://localhost:8080/api/v1/examinations/{exam_id}/hall-tickets/generate
+
+# Download single hall ticket PDF
+curl -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8080/api/v1/examinations/{exam_id}/hall-tickets/{ticket_id}/pdf -o ticket.pdf
+
+# Download batch PDF
+curl -H "Authorization: Bearer $TOKEN" \
+  "http://localhost:8080/api/v1/examinations/{exam_id}/hall-tickets/pdf?class_id=..." -o batch.pdf
+
+# Verify hall ticket (public endpoint)
+curl http://localhost:8080/api/v1/hall-tickets/verify/{qr_code_data}
+
+# Hall ticket templates
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/v1/hall-ticket-templates
+```
+
+### Roll Number Format
+Default pattern: `{YEAR}-{CLASS_CODE}-{SEQUENCE}`
+Example: `2026-LKG-001`, `2026-LKG-002`
+
+### QR Code Verification
+QR code contains encrypted data with:
+- Hall ticket ID
+- Student ID (shortened)
+- Examination ID (shortened)
+- Verification hash (SHA-256)
+
+The verification endpoint validates the hash to prevent tampering.
+
 ## Dev Agent Record
 
 ### Agent Model Used

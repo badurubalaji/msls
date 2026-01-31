@@ -196,7 +196,7 @@ export const NAV_ITEMS: NavItem[] = [
   {
     label: 'Exams',
     icon: 'file-signature',
-    permissions: ['exam:type:view', 'exam:view'],
+    permissions: ['exam:type:view', 'exam:view', 'hall-ticket:view'],
     children: [
       {
         label: 'Examinations',
@@ -209,6 +209,12 @@ export const NAV_ITEMS: NavItem[] = [
         icon: 'clipboard-document-list',
         route: '/exams/types',
         permissions: ['exam:type:view'],
+      },
+      {
+        label: 'Hall Ticket Templates',
+        icon: 'identification',
+        route: '/exams/hall-ticket-templates',
+        permissions: ['hall-ticket:template-manage'],
       },
     ],
   },

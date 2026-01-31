@@ -185,6 +185,76 @@ The story was partially complete at the start of implementation. Backend tasks (
 | 2026-01-31 | Completed frontend schedule management component | Claude Opus 4.5 |
 | 2026-01-31 | Story completed, all tasks done | Claude Opus 4.5 |
 
+## How It Works (Manual Testing)
+
+### Prerequisites
+1. Backend running: `cd msls-backend && go run cmd/api/main.go`
+2. Frontend running: `cd msls-frontend && npm start`
+3. Login as admin at http://localhost:4200
+
+### Seed Data (Optional)
+Run seed data to create a test examination:
+```bash
+cd msls-backend
+PGPASSWORD=postgres psql -h localhost -U postgres -d msls -f scripts/seed_exam_data.sql
+```
+
+### Test Scenarios
+
+#### 1. View Examinations
+- Navigate to **Exams → Examinations** in sidebar
+- See list of all examinations with status indicators
+- Filter by status tabs: All, Draft, Scheduled, Ongoing, Completed
+
+#### 2. Create Examination
+- Click **+ Create Exam** button
+- Fill in: Name, Exam Type, Academic Year
+- Select applicable classes
+- Set date range (start and end dates)
+- Click **Create** → Exam created in "Draft" status
+
+#### 3. Manage Exam Schedules
+- Click **Schedules** button on an exam row
+- Add schedule: Click **+ Add Schedule**
+  - Select subject (filtered by linked classes)
+  - Set date (must be within exam period)
+  - Set time (start < end)
+  - Set max marks and passing marks
+  - Optional: venue/room
+- Edit/Delete schedules as needed
+
+#### 4. Publish Examination
+- On schedule page, click **Publish** button
+- Confirm in dialog
+- Status changes from "Draft" to "Scheduled"
+- Schedule editing is disabled after publishing
+
+#### 5. Unpublish (if needed)
+- Click **Unpublish** to return to "Draft" status
+- Editing is re-enabled
+
+### API Testing (curl)
+```bash
+# List examinations
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/v1/examinations
+
+# Get single exam with schedules
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/v1/examinations/{exam_id}
+
+# Create examination
+curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"name":"Test Exam","exam_type_id":"...","academic_year_id":"...","class_ids":["..."],"start_date":"2026-02-01","end_date":"2026-02-10"}' \
+  http://localhost:8080/api/v1/examinations
+
+# Add schedule
+curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"subject_id":"...","exam_date":"2026-02-01","start_time":"09:00","end_time":"11:00","max_marks":100}' \
+  http://localhost:8080/api/v1/examinations/{exam_id}/schedules
+
+# Publish exam
+curl -X POST -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/v1/examinations/{exam_id}/publish
+```
+
 ### File List
 **Backend (pre-existing):**
 - msls-backend/internal/modules/examination/dto.go
